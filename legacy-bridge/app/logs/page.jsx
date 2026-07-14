@@ -1,15 +1,16 @@
-import { globalStyles } from "../../styles/global.style";
+import AppShell from "../../components/Layout/AppShell";
+import LogsContent from "../../components/Logs/LogsContent";
+import PageHeader from "../../components/Layout/PageHeader";
 
 export default function LogsPage() {
   return (
-    <main className={globalStyles.page}>
-      <section className={globalStyles.pageHeader}>
-        <p className={globalStyles.eyebrow}>Audit Log</p>
-        <h1 className={globalStyles.pageTitle}>Prescription History</h1>
-        <p className={globalStyles.pageDescription}>
-          Track AI extraction, manual edits, approvals, and flagged prescription events.
-        </p>
-      </section>
-    </main>
+    <AppShell>
+      <PageHeader
+        eyebrow="Audit Log"
+        title="Prescription History"
+        description="Track AI extraction, manual edits, approvals, and flagged prescription events."
+      />
+      <LogsContent />
+    </AppShell>
   );
 }

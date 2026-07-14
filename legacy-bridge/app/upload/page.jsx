@@ -1,15 +1,16 @@
-import { globalStyles } from "../../styles/global.style";
+import AppShell from "../../components/Layout/AppShell";
+import PageHeader from "../../components/Layout/PageHeader";
+import UploadWorkspace from "../../components/Upload/UploadWorkspace";
 
 export default function UploadPage() {
   return (
-    <main className={globalStyles.page}>
-      <section className={globalStyles.pageHeader}>
-        <p className={globalStyles.eyebrow}>Interactive Workspace</p>
-        <h1 className={globalStyles.pageTitle}>Scan New Prescription</h1>
-        <p className={globalStyles.pageDescription}>
-          Upload or capture a prescription image, then review extracted medicine details before approval.
-        </p>
-      </section>
-    </main>
+    <AppShell>
+      <PageHeader
+        eyebrow="Interactive Workspace"
+        title="Scan New Prescription"
+        description="Upload or capture a prescription image, then review extracted medicine details before approval."
+      />
+      <UploadWorkspace />
+    </AppShell>
   );
 }
