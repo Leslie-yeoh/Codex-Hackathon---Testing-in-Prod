@@ -12,7 +12,7 @@ from datetime import datetime
 
 from ai.vlm_client import NVIDIAVLMClient, SyncNVIDIAVLMClient, VLMResponse
 from ai.preprocessor import preprocess_handwriting, HandwritingPreprocessor
-from db.mongo_db import MongoDBClient
+from db.mongo_ocr import MongoDBClient
 
 
 def calculate_confidence(usage: Optional[dict], reasoning: Optional[str]) -> float:

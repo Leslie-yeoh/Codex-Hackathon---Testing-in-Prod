@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 
-from db.mongo_db import MongoDBClient
+from db.mongo_ocr import MongoDBClient
 
 _db_client: Optional[MongoDBClient] = None
 

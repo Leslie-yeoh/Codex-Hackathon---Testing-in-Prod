@@ -6,12 +6,15 @@ from dataclasses import asdict
 from pymongo import MongoClient
 from gridfs import GridFS, GridFSBucket
 import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 
 class MongoDBClient:
     def __init__(self, uri: Optional[str] = None, database: str = "doctor_ocr"):
         self.uri = uri or os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-        self.database_name = database
+        self.database_name = os.getenv("GRIDFS_DATABASE_NAME", database)
         self.client: Optional[MongoClient] = None
         self.db = None
         self.fs: Optional[GridFS] = None

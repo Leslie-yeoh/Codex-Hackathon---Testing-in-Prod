@@ -1,3 +1,3 @@
-from db.mongo_db import MongoDBClient
+from db.mongo_ocr import MongoDBClient
 
 __all__ = ["MongoDBClient"]

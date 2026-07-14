@@ -6,7 +6,7 @@ from ai.vlm_client import NVIDIAVLMClient, SyncNVIDIAVLMClient, VLMResponse
 from ai.preprocessor import HandwritingPreprocessor, preprocess_handwriting
 from ai.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, MEDICAL_ABBREVIATIONS
 from ai.workflow import DoctorHandwritingWorkflow, ProcessingResult, create_workflow
-from db.mongo_db import MongoDBClient
+from db.mongo_ocr import MongoDBClient
 
 __all__ = [
     "NVIDIAVLMClient",
