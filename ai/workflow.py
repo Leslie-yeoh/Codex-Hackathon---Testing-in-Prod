@@ -12,6 +12,7 @@ from datetime import datetime
 
 from ai.vlm_client import NVIDIAVLMClient, SyncNVIDIAVLMClient, VLMResponse
 from ai.preprocessor import preprocess_handwriting, HandwritingPreprocessor
+from db.mongo_db import MongoDBClient
 
 
 def calculate_confidence(usage: Optional[dict], reasoning: Optional[str]) -> float:
@@ -51,6 +52,7 @@ class DoctorHandwritingWorkflow:
         preprocess_dir: str = "images/preprocessed",
         output_dir: str = "output",
         custom_prompt: Optional[str] = None,
+        mongo_client: Optional[MongoDBClient] = None,
     ):
         self.api_key = api_key or os.getenv("NVIDIA_NIM_API_KEY")
         if not self.api_key:
@@ -60,6 +62,7 @@ class DoctorHandwritingWorkflow:
         self.preprocess_dir = preprocess_dir
         self.output_dir = output_dir
         self.custom_prompt = custom_prompt
+        self.mongo_client = mongo_client
 
         Path(self.preprocess_dir).mkdir(parents=True, exist_ok=True)
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
@@ -183,6 +186,32 @@ class DoctorHandwritingWorkflow:
         with open(output_file, "w") as f:
             json.dump(asdict(result), f, indent=2)
 
+        if self.mongo_client is not None:
+            self._save_to_mongo(result)
+
+    def _save_to_mongo(self, result: ProcessingResult):
+        try:
+            image_path = result.preprocessed_path or result.image_path
+            if not os.path.exists(image_path):
+                print(f"MongoDB: source image not found at {image_path}, skipping MongoDB save")
+                return
+
+            with open(image_path, "rb") as f:
+                image_bytes = f.read()
+
+            ext = Path(image_path).suffix.lower()
+            content_type_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".bmp": "image/bmp"}
+            content_type = content_type_map.get(ext, "application/octet-stream")
+
+            self.mongo_client.save_extraction(
+                image_bytes=image_bytes,
+                original_path=result.image_path,
+                content_type=content_type,
+                result=result,
+            )
+        except Exception as e:
+            print(f"MongoDB save failed: {e}")
+
     def _save_batch_summary(self, results: List[ProcessingResult]):
         summary = {
             "total_processed": len(results),
@@ -214,6 +243,16 @@ class DoctorHandwritingWorkflow:
 
 def create_workflow(
     api_key: Optional[str] = None,
+    mongo_uri: Optional[str] = None,
     **kwargs,
 ) -> DoctorHandwritingWorkflow:
-    return DoctorHandwritingWorkflow(api_key=api_key, **kwargs)
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    mongo_client = None
+    resolved_uri = mongo_uri or os.getenv("MONGODB_URI")
+    if resolved_uri:
+        mongo_client = MongoDBClient(uri=resolved_uri)
+        mongo_client.connect()
+        print("MongoDB client initialized and connected")
+    return DoctorHandwritingWorkflow(api_key=api_key, mongo_client=mongo_client, **kwargs)

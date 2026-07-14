@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 import uvicorn
 import httpx
 
-from ai import create_workflow, DoctorHandwritingWorkflow, ProcessingResult
+from ai import create_workflow, DoctorHandwritingWorkflow, ProcessingResult, MongoDBClient
 
 app = FastAPI(
     title="Doctor Handwriting OCR API",
@@ -139,6 +139,7 @@ async def ocr_handwriting(
         wf.preprocess = enhance
 
         result = wf.process_single(tmp_path)
+        wf._save_result(result)
         response = convert_result_to_response(result)
         return response
 
@@ -180,6 +181,7 @@ async def ocr_handwriting_batch(
 
         try:
             result = wf.process_single(tmp_path)
+            wf._save_result(result)
             results.append(convert_result_to_response(result))
         finally:
             if os.path.exists(tmp_path):
@@ -211,6 +213,7 @@ async def ocr_handwriting_filepath(
     wf.preprocess = enhance
 
     result = wf.process_single(image_path)
+    wf._save_result(result)
     return convert_result_to_response(result)
 
 
@@ -244,6 +247,7 @@ async def ocr_handwriting_base64(request: Base64ImageRequest):
 
     try:
         result = wf.process_single(tmp_path)
+        wf._save_result(result)
         return convert_result_to_response(result)
     finally:
         if os.path.exists(tmp_path):
@@ -277,6 +281,7 @@ async def ocr_handwriting_url(request: URLImageRequest):
 
     try:
         result = wf.process_single(tmp_path)
+        wf._save_result(result)
         return convert_result_to_response(result)
     finally:
         if os.path.exists(tmp_path):
