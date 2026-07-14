@@ -4,7 +4,7 @@
 
 ```bash
 cd codex-thing
-python -m uvicorn route:app --host 0.0.0.0 --port 8000
+uvicorn backend.route:app --host 0.0.0.0 --port 8000
 ```
 
 ## Endpoints
