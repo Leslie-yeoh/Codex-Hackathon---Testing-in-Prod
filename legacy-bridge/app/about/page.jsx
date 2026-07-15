@@ -7,8 +7,8 @@ export default function AboutPage() {
     <AppShell>
       <PageHeader
         eyebrow="About"
-        title="Why Legacy Bridge exists"
-        description="Legacy Bridge is designed for hospital teams that need a practical path from fragmented clinical records to structured, reviewable data."
+        title="About Legacy Bridge"
+        description="Legacy Bridge helps healthcare teams convert older clinical records into reviewed digital records that are easier to search, share, and prepare for integration."
       />
       <AboutContent />
     </AppShell>

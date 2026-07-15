@@ -1,25 +1,28 @@
-import { globalStyles } from "../../styles/global.style";
+import Container from "../Container/Container";
 
 const architecture = [
-  "Unstructured input: image, PDF, handwritten note, or legacy screenshot",
-  "OCR layer: extracts raw text from the source material",
-  "AI normalization: maps shorthand and mixed-language terms into clinical language",
-  "FHIR mapping: validates Patient and Observation structures",
-  "Audit trail: records reviewer actions and approval history",
+  "Upload source: staff add a photo, scan, PDF, or screenshot from an older record.",
+  "Text reading: the system reads the visible text so staff do not need to type everything again.",
+  "Clinical organization: extracted content is arranged into patient context, findings, values, and notes.",
+  "Human review: staff correct missing or unclear information before confirming the record.",
+  "Saved record: confirmed information becomes searchable and can be shared as a PDF or link.",
 ];
 
 const principles = [
   {
-    title: "Clinical safety first",
-    description: "Low-confidence fields are surfaced for manual review before approval.",
+    title: "For hospital staff",
+    description:
+      "Legacy Bridge reduces repeated typing and gives staff a clear place to check, correct, and confirm extracted record details.",
   },
   {
-    title: "Interoperability over lock-in",
-    description: "The MVP uses FHIR-style payloads so extracted data can move between systems.",
+    title: "For reviewers",
+    description:
+      "Reviewers can compare the original context with extracted fields, then confirm only when the information is complete.",
   },
   {
-    title: "Traceable human review",
-    description: "Every edit, flag, and approval should be connected to an operator.",
+    title: "For technical teams",
+    description:
+      "The interface keeps records structured and traceable so future backend services can connect them to hospital systems.",
   },
 ];
 
@@ -27,35 +30,29 @@ export default function AboutContent() {
   return (
     <>
       <section className={styles.grid}>
-        <article className={globalStyles.section}>
-          <h2 className={globalStyles.sectionTitle}>The problem</h2>
+        <Container as="article" title="The problem">
           <p className={styles.paragraph}>
-            Many hospital workflows still depend on paper records, exported scans, or
-            isolated legacy systems. When patient information moves between facilities,
-            important context can be delayed, duplicated, or lost.
+            Many healthcare workflows still depend on paper records, scanned documents,
+            or systems that cannot easily share data with newer platforms. Staff may
+            need to read the same document many times, retype information, or search
+            through old files when a patient returns.
           </p>
-        </article>
+        </Container>
 
-        <article className={globalStyles.section}>
-          <h2 className={globalStyles.sectionTitle}>The solution</h2>
+        <Container as="article" title="The solution">
           <p className={styles.paragraph}>
-            Legacy Bridge acts as a middleware layer. It converts messy clinical inputs
-            into structured, reviewable, FHIR-ready data that can support modern EHR
-            integration.
+            Legacy Bridge provides a guided workspace for turning those older sources
+            into digital records. The goal is not to replace clinical judgment. The
+            goal is to help users capture the context, review extracted details, fix
+            gaps, and save a confirmed version for later use.
           </p>
-        </article>
+        </Container>
       </section>
 
-      <section className={globalStyles.section}>
-        <div className={globalStyles.sectionHeader}>
-          <div>
-            <h2 className={globalStyles.sectionTitle}>System architecture</h2>
-            <p className={globalStyles.sectionDescription}>
-              The hackathon demo focuses on the path from unstructured records to a
-              validated clinical payload.
-            </p>
-          </div>
-        </div>
+      <Container
+        title="How it works"
+        description="The same workflow can be understood by non-technical users and technical teams: start with the source, organize the information, review it, then save it."
+      >
         <ol className={styles.timeline}>
           {architecture.map((item, index) => (
             <li key={item} className={styles.timelineItem}>
@@ -64,16 +61,26 @@ export default function AboutContent() {
             </li>
           ))}
         </ol>
-      </section>
+      </Container>
 
       <section className={styles.cards}>
         {principles.map((principle) => (
-          <article key={principle.title} className={globalStyles.section}>
-            <h3 className={styles.cardTitle}>{principle.title}</h3>
+          <Container key={principle.title} as="article" title={principle.title}>
             <p className={styles.paragraph}>{principle.description}</p>
-          </article>
+          </Container>
         ))}
       </section>
+
+      <Container title="Technical note">
+        <p className={styles.paragraph}>
+          For technical readers, Legacy Bridge is shaped as a frontend workflow for
+          clinical data preparation. It separates source upload, extracted context,
+          editable clinical findings, user confirmation, record ownership, audit
+          visibility, and admin monitoring. Future backend work can connect these
+          steps to OCR services, AI extraction, secure storage, access control, and
+          standards-based health data exchange.
+        </p>
+      </Container>
     </>
   );
 }
@@ -85,5 +92,4 @@ const styles = {
   timelineItem: "flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700",
   timelineNumber: "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-700 text-xs font-bold text-white",
   cards: "grid gap-4 md:grid-cols-3",
-  cardTitle: "text-base font-semibold text-slate-950",
 };
