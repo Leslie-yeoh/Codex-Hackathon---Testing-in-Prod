@@ -8,7 +8,7 @@ export default function UploadPage() {
       <PageHeader
         eyebrow="Interactive Workspace"
         title="Scan New Prescription"
-        description="Upload or capture a prescription image, then review extracted medicine details before approval."
+        description="Upload or capture a prescription image, review the extracted medicine details, then confirm the record for secure saving and audit tracking."
       />
       <UploadWorkspace />
     </AppShell>
