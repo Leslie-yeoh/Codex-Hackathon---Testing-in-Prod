@@ -1,55 +1,32 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { demoAuditLog, initialAuditLogs } from "../../constants/mock/logs.mock";
+import Container from "../Container/Container";
+import { LOG_TYPE_OPTIONS } from "../../app/logs/constants";
+import styles from "../../app/logs/logs.style";
+import { initialAuditLogs } from "../../constants/mock/logs.mock";
 import { globalStyles } from "../../styles/global.style";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 export default function LogsContent() {
-  const [logs, setLogs] = useState(initialAuditLogs);
   const [query, setQuery] = useState("");
   const [type, setType] = useState("All");
 
   const filteredLogs = useMemo(
     () =>
-      logs.filter((log) => {
+      initialAuditLogs.filter((log) => {
         const matchesQuery = `${log.operator} ${log.id} ${log.description}`
           .toLowerCase()
           .includes(query.toLowerCase());
         const matchesType = type === "All" || log.type === type;
         return matchesQuery && matchesType;
       }),
-    [logs, query, type]
+    [query, type]
   );
 
-  const addLog = () => {
-    const nextLog = {
-      ...demoAuditLog,
-      id: `LOG-${String(logs.length + 1).padStart(3, "0")}`,
-    };
-
-    setLogs((current) => [nextLog, ...current]);
-  };
-
   return (
-    <section className={globalStyles.section}>
-      <div className={globalStyles.sectionHeader}>
-        <div>
-          <h2 className={globalStyles.sectionTitle}>Audit Timeline</h2>
-          <p className={globalStyles.sectionDescription}>
-            Search, filter, add, and view traceable actions for the extraction workflow.
-          </p>
-        </div>
-        <button
-          type="button"
-          className={cn(globalStyles.buttonBase, globalStyles.secondaryButton)}
-          onClick={addLog}
-        >
-          Add demo log
-        </button>
-      </div>
-
+    <Container title="Audit Timeline">
       <div className={styles.filters}>
         <input
           className={globalStyles.searchInput}
@@ -62,13 +39,15 @@ export default function LogsContent() {
           value={type}
           onChange={(event) => setType(event.target.value)}
         >
-          <option>All</option>
-          <option>AI_Extraction</option>
-          <option>Manual_Edit</option>
-          <option>Final_Approval</option>
+          {LOG_TYPE_OPTIONS.map((option) => (
+            <option key={option}>{option}</option>
+          ))}
         </select>
       </div>
 
+      {filteredLogs.length === 0 ? (
+        <div className={styles.emptyState}>No audit logs match the current filters.</div>
+      ) : (
       <div className={globalStyles.tableWrap}>
         <div className={globalStyles.tableScroll}>
           <table className={globalStyles.table}>
@@ -97,12 +76,7 @@ export default function LogsContent() {
           </table>
         </div>
       </div>
-    </section>
+      )}
+    </Container>
   );
 }
-
-const styles = {
-  filters: "my-5 flex flex-col gap-3 md:flex-row md:items-center",
-  select: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 md:w-56",
-  typeBadge: "bg-slate-100 text-slate-700",
-};

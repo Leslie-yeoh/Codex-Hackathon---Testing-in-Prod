@@ -7,8 +7,7 @@ export default function LogsPage() {
     <AppShell>
       <PageHeader
         eyebrow="Audit Log"
-        title="Prescription History"
-        description="Track AI extraction, manual edits, approvals, and flagged prescription events."
+        title="Audit Log"
       />
       <LogsContent />
     </AppShell>

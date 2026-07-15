@@ -21,10 +21,3 @@ export const initialAuditLogs = [
     description: "Approved Observation payload for cloud database write.",
   },
 ];
-
-export const demoAuditLog = {
-  time: "14 July 2026, Now",
-  operator: "Dr. Sarah Tan",
-  type: "Manual_Edit",
-  description: "Added demo audit event during reviewer inspection.",
-};
