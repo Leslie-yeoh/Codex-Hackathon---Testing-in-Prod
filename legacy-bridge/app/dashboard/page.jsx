@@ -7,8 +7,7 @@ export default function DashboardPage() {
     <AppShell>
       <PageHeader
         eyebrow="Dashboard"
-        title="Legacy-to-Cloud Data Extractor"
-        description="Convert scanned charts, handwritten notes, and legacy screenshots into validated FHIR-ready clinical data."
+        title="Admin Dashboard"
       />
       <DashboardContent />
     </AppShell>
