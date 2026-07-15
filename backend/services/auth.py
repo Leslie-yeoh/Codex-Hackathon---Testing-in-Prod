@@ -1,4 +1,4 @@
-"""Authentication routes and helpers."""
+"""Authentication service logic."""
 
 from __future__ import annotations
 
@@ -6,14 +6,14 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from dotenv import load_dotenv
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorClient
 from passlib.context import CryptContext
 from pydantic import BaseModel, Field
 
-from dotenv import load_dotenv
 load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
@@ -26,7 +26,6 @@ users_collection = client["codex"]["users"]
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class SignupRequest(BaseModel):
@@ -89,6 +88,35 @@ def decode_access_token(token: str) -> dict[str, Any]:
         ) from exc
 
 
+async def signup_user(payload: SignupRequest) -> UserResponse:
+    """Create a user if the username is available."""
+
+    if payload.password != payload.confirm_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="passwords do not match")
+
+    if await users_collection.find_one({"username": payload.username}):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username already exists")
+
+    await users_collection.insert_one(
+        {"username": payload.username, "hashed_password": hash_password(payload.password)}
+    )
+    return UserResponse(username=payload.username)
+
+
+async def login_user(payload: LoginRequest) -> TokenResponse:
+    """Authenticate a user and return an access token."""
+
+    user = await users_collection.find_one({"username": payload.username})
+    if not user or not verify_password(payload.password, user["hashed_password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return TokenResponse(access_token=create_access_token(payload.username))
+
+
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any]:
     """Return the current user from a Bearer token."""
 
@@ -108,41 +136,3 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
-
-
-@router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def signup(payload: SignupRequest) -> UserResponse:
-    """Create a new user account."""
-
-    if payload.password != payload.confirm_password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="passwords do not match")
-
-    if await users_collection.find_one({"username": payload.username}):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username already exists")
-
-    await users_collection.insert_one(
-        {"username": payload.username, "hashed_password": hash_password(payload.password)}
-    )
-    return UserResponse(username=payload.username)
-
-
-@router.post("/login", response_model=TokenResponse)
-async def login(payload: LoginRequest) -> TokenResponse:
-    """Authenticate a user and return a JWT access token."""
-
-    user = await users_collection.find_one({"username": payload.username})
-    if not user or not verify_password(payload.password, user["hashed_password"]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="invalid username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    return TokenResponse(access_token=create_access_token(payload.username))
-
-
-@router.get("/me", response_model=UserResponse)
-async def me(current_user: dict[str, Any] = Depends(get_current_user)) -> UserResponse:
-    """Return the current authenticated user."""
-
-    return UserResponse(username=current_user["username"])
