@@ -6,11 +6,11 @@ export const globalStyles = {
   pageTitle: "text-2xl font-semibold tracking-normal text-slate-950 md:text-4xl",
   pageDescription: "text-sm leading-6 text-slate-600 md:text-base",
 
-  header: "sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur",
-  headerInner: "mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between md:px-8",
+  header: "sticky top-0 z-30 border-b border-slate-200 bg-white",
+  headerInner: "mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8",
   brand: "flex items-center gap-3 text-base font-semibold text-slate-950",
   brandMark: "flex h-9 w-9 items-center justify-center rounded-lg bg-teal-700 text-sm font-bold text-white",
-  nav: "flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600 md:justify-end",
+  nav: "flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600 lg:justify-end",
   navLink: "rounded-md px-3 py-2 transition hover:bg-slate-100 hover:text-slate-950",
   profileBadge: "rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700",
 
@@ -33,6 +33,8 @@ export const globalStyles = {
 
   fieldLabel: "text-sm font-medium text-slate-700",
   input: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-100",
+  checkbox:
+    "h-5 w-5 shrink-0 cursor-pointer rounded border-slate-300 text-teal-700 focus:ring-2 focus:ring-teal-100",
   warningInput: "border-amber-400 focus:border-amber-500 focus:ring-amber-100",
   searchInput: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-100 md:max-w-md",
 

@@ -1,38 +1,67 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "../../hooks/globalHooks";
+import { getNavigationItems } from "../../navigation/routes";
 import { globalStyles } from "../../styles/global.style";
-
-const navItems = [
-  { label: "Home", href: "/home" },
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Upload", href: "/upload" },
-  { label: "Audit Logs", href: "/logs" },
-  { label: "About", href: "/about" },
-];
+import ConfirmationModal from "../Modal/ConfirmationModal";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
+const getInitials = (name) =>
+  name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
 export default function NavigationBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const { isSignedIn, signOut, user } = useAuth();
+
+  const navItems = getNavigationItems(user);
+  const displayName = user?.username || "User";
+  const displayRole = user?.role || "User";
+  const displayInitials = getInitials(displayName);
+
+  const closeMenus = () => {
+    setIsMenuOpen(false);
+    setIsProfileOpen(false);
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    closeMenus();
+    setIsSignOutModalOpen(false);
+    router.push("/home");
+  };
+
+  const requestSignOut = () => {
+    closeMenus();
+    setIsSignOutModalOpen(true);
+  };
 
   const renderNavLink = (item, extraClassName = "") => {
-    const isActive =
-      item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+    const isActive = item.exact
+      ? pathname === item.href
+      : item.href === "/"
+        ? pathname === "/"
+        : pathname.startsWith(item.href);
 
     return (
       <Link
         key={item.href}
         href={item.href}
         aria-current={isActive ? "page" : undefined}
-        onClick={() => {
-          setIsMenuOpen(false);
-          setIsProfileOpen(false);
-        }}
+        onClick={closeMenus}
         className={cn(
           globalStyles.navLink,
           isActive && styles.navLinkActive,
@@ -45,6 +74,7 @@ export default function NavigationBar() {
   };
 
   return (
+    <>
     <header className={globalStyles.header}>
       <div className={cn(globalStyles.headerInner, styles.headerInner)}>
         <div className={styles.mobileHeaderRow}>
@@ -52,12 +82,17 @@ export default function NavigationBar() {
             href="/home"
             className={globalStyles.brand}
             aria-label="Legacy Bridge home"
-            onClick={() => {
-              setIsMenuOpen(false);
-              setIsProfileOpen(false);
-            }}
+            onClick={closeMenus}
           >
-            <span className={globalStyles.brandMark}>LB</span>
+            <span className={styles.brandLogoMark}>
+              <Image
+                src="/logo/webp/legacy-bridge_no_title.webp"
+                alt=""
+                width={48}
+                height={48}
+                className={styles.brandLogoImage}
+              />
+            </span>
             <span className={styles.brandText}>
               <span>Legacy Bridge</span>
               <span className={styles.brandSubtitle}>
@@ -69,9 +104,7 @@ export default function NavigationBar() {
           <button
             type="button"
             className={styles.menuButton}
-            aria-label={
-              isMenuOpen ? "Close navigation menu" : "Open navigation menu"
-            }
+            aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={isMenuOpen}
             aria-controls="mobile-navigation"
             onClick={() => {
@@ -110,54 +143,54 @@ export default function NavigationBar() {
             {navItems.map((item) => renderNavLink(item))}
           </nav>
 
-          <div className={styles.profileWrap}>
-            <button
-              type="button"
-              className={cn(globalStyles.profileBadge, styles.profileButton)}
-              aria-label="Open personalisation menu"
-              aria-expanded={isProfileOpen}
-              aria-controls="profile-menu"
-              onClick={() => setIsProfileOpen((current) => !current)}
-            >
-              <span className={styles.profileAvatar}>ST</span>
-              <span className={styles.profileCopy}>
-                <span className={styles.profileRole}>Clinical Reviewer</span>
-                <span>Dr. Sarah Tan</span>
-              </span>
-              <span className={styles.chevron} aria-hidden="true">
-                {isProfileOpen ? "▲" : "▼"}
-              </span>
-            </button>
-
-            <div
-              id="profile-menu"
-              className={cn(
-                styles.profileMenu,
-                isProfileOpen ? styles.profileMenuOpen : styles.profileMenuClosed
-              )}
-            >
-              <div className={styles.profileMenuHeader}>
-                <p className={styles.profileMenuName}>Dr. Sarah Tan</p>
-                <p className={styles.profileMenuMeta}>Clinical Reviewer</p>
-                <span className={cn(globalStyles.badge, styles.securedBadge)}>
-                  Session secured
+          {isSignedIn ? (
+            <div className={styles.profileWrap}>
+              <button
+                type="button"
+                className={cn(globalStyles.profileBadge, styles.profileButton)}
+                aria-label="Open personal settings"
+                aria-expanded={isProfileOpen}
+                aria-controls="profile-menu"
+                onClick={() => setIsProfileOpen((current) => !current)}
+              >
+                <span className={styles.profileAvatar}>{displayInitials}</span>
+                <span className={styles.profileCopy}>
+                  <span className={styles.profileRole}>{displayRole}</span>
+                  <span>{displayName}</span>
                 </span>
-              </div>
+                <span className={styles.chevron} aria-hidden="true">
+                  {isProfileOpen ? "▲" : "▼"}
+                </span>
+              </button>
 
-              <button type="button" className={styles.profileMenuItem}>
-                Personalisation
-              </button>
-              <button type="button" className={styles.profileMenuItem}>
-                Notification preferences
-              </button>
-              <button type="button" className={styles.profileMenuItem}>
-                Accessibility settings
-              </button>
-              <Link href="/login" className={styles.profileMenuLink}>
-                Switch account
-              </Link>
+              <div
+                id="profile-menu"
+                className={cn(
+                  styles.profileMenu,
+                  isProfileOpen ? styles.profileMenuOpen : styles.profileMenuClosed
+                )}
+              >
+                <Link
+                  href="/settings"
+                  className={styles.profileMenuLink}
+                  onClick={closeMenus}
+                >
+                  Settings
+                </Link>
+                <button
+                  type="button"
+                  className={styles.profileMenuDanger}
+                  onClick={requestSignOut}
+                >
+                  Sign out
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <Link href="/login" className={styles.signInLink}>
+              Sign in
+            </Link>
+          )}
         </div>
 
         <div
@@ -171,49 +204,66 @@ export default function NavigationBar() {
             {navItems.map((item) => renderNavLink(item, styles.mobileNavLink))}
           </nav>
 
-          <div className={styles.mobileProfilePanel}>
-            <div className={styles.mobileProfileHeader}>
-              <span className={styles.profileAvatar}>ST</span>
-              <div className={styles.mobileProfileText}>
-                <span className={styles.profileRole}>Clinical Reviewer</span>
-                <span>Dr. Sarah Tan</span>
+          {isSignedIn ? (
+            <div className={styles.mobileProfilePanel}>
+              <div className={styles.mobileProfileHeader}>
+                <span className={styles.profileAvatar}>{displayInitials}</span>
+                <span className={styles.mobileProfileCopy}>
+                  <span className={styles.profileRole}>{displayRole}</span>
+                  <span>{displayName}</span>
+                </span>
               </div>
-            </div>
-            <span className={cn(globalStyles.badge, styles.mobileSecuredBadge)}>
-              Session secured
-            </span>
-            <div className={styles.mobileProfileActions}>
-              <button type="button" className={styles.profileMenuItem}>
-                Personalisation
+              <Link
+                href="/settings"
+                className={styles.profileMenuLink}
+                onClick={closeMenus}
+              >
+                Settings
+              </Link>
+              <button
+                type="button"
+                className={styles.profileMenuDanger}
+                onClick={requestSignOut}
+              >
+                Sign out
               </button>
-              <button type="button" className={styles.profileMenuItem}>
-                Accessibility settings
-              </button>
             </div>
-          </div>
+          ) : (
+            <Link href="/login" className={styles.mobileSignInLink}>
+              Sign in
+            </Link>
+          )}
         </div>
       </div>
     </header>
+    <ConfirmationModal
+      cancelLabel="Stay signed in"
+      confirmLabel="Sign out"
+      description="You will return to the home page and need to sign in again to access upload, records, and settings."
+      isOpen={isSignOutModalOpen}
+      onCancel={() => setIsSignOutModalOpen(false)}
+      onConfirm={handleSignOut}
+      title="Sign out?"
+    />
+    </>
   );
 }
 
 const styles = {
-  // Navigation links
   navLinkActive: "bg-teal-50 text-teal-800",
-
-  // Brand
   headerInner: "relative",
-  mobileHeaderRow: "flex items-center justify-between gap-3 md:contents",
+  mobileHeaderRow: "flex items-center justify-between gap-3 lg:contents",
+  brandLogoMark:
+    "flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white",
+  brandLogoImage: "h-full w-full object-contain",
   brandText: "flex flex-col leading-tight",
   brandSubtitle: "text-xs font-medium text-slate-500",
-
-  // Mobile hamburger button
   menuButton: [
     "inline-flex h-10 w-10 items-center justify-center",
     "rounded-md border border-slate-200 bg-white text-slate-700",
     "transition hover:bg-slate-50",
     "focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2",
-    "md:hidden",
+    "lg:hidden",
   ].join(" "),
   screenReaderOnly: "sr-only",
   hamburgerIcon: "flex w-5 flex-col gap-1.5",
@@ -221,44 +271,39 @@ const styles = {
   hamburgerLineTopOpen: "translate-y-2 rotate-45",
   hamburgerLineMiddleOpen: "opacity-0",
   hamburgerLineBottomOpen: "-translate-y-2 -rotate-45",
-
-  // Desktop layout
-  desktopNavWrap: "hidden gap-3 md:flex md:flex-row md:items-center",
-
-  // Profile
+  desktopNavWrap: "hidden gap-3 lg:flex lg:flex-row lg:items-center",
   profileWrap: "relative flex flex-wrap items-center gap-2",
   profileButton: "flex items-center gap-2 text-left transition hover:bg-white",
-  profileAvatar: "flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-teal-700 text-xs font-bold text-white",
+  profileAvatar:
+    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-teal-700 text-xs font-bold text-white",
   profileCopy: "flex flex-col",
-  securedBadge: "bg-emerald-100 text-emerald-800",
   profileRole: "block text-xs font-medium text-slate-500",
   chevron: "text-xs text-slate-400",
   profileMenu: [
-    "absolute right-0 top-full z-40 mt-2 w-72 overflow-hidden",
-    "rounded-lg border border-slate-200 bg-white shadow-lg",
+    "absolute right-0 top-full z-40 mt-2 w-40",
+    "rounded-lg border border-slate-200 bg-white p-1 shadow-lg",
   ].join(" "),
   profileMenuOpen: "block",
   profileMenuClosed: "hidden",
-  profileMenuHeader: "flex flex-col gap-1 border-b border-slate-200 p-4",
-  profileMenuName: "text-sm font-semibold text-slate-950",
-  profileMenuMeta: "text-xs font-medium text-slate-500",
-  profileMenuItem: "w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100",
-  profileMenuLink: "block rounded-md px-3 py-2 text-sm font-semibold text-teal-700 transition hover:bg-teal-50",
-
-  // Mobile menu
+  profileMenuLink:
+    "block rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100",
+  profileMenuDanger:
+    "w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-red-700 transition hover:bg-red-50",
+  signInLink:
+    "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50",
   mobileMenu: [
     "absolute left-4 right-4 top-full z-30",
     "mt-2 flex-col gap-3 rounded-lg border border-slate-200",
-    "bg-white p-3 shadow-lg md:hidden",
+    "bg-white p-3 shadow-lg lg:hidden",
     "sm:left-6 sm:right-6",
   ].join(" "),
   mobileMenuOpen: "flex",
   mobileMenuClosed: "hidden",
   mobileNav: "flex flex-col gap-1 text-sm font-medium text-slate-700",
   mobileNavLink: "w-full",
-  mobileProfilePanel: "flex flex-col gap-3 rounded-lg bg-slate-50 p-3",
-  mobileProfileHeader: "flex items-center gap-2",
-  mobileSecuredBadge: "w-fit bg-emerald-100 text-emerald-800",
-  mobileProfileText: "text-sm font-medium text-slate-700",
-  mobileProfileActions: "grid gap-1",
+  mobileProfilePanel: "grid gap-2 rounded-lg bg-slate-50 p-2",
+  mobileProfileHeader: "flex items-center gap-2 border-b border-slate-200 pb-2",
+  mobileProfileCopy: "flex min-w-0 flex-col text-sm font-semibold text-slate-800",
+  mobileSignInLink:
+    "rounded-md border border-slate-300 bg-white px-3 py-2 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50",
 };
