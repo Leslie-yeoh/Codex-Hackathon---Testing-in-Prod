@@ -1,6 +1,5 @@
-def main():
-    print("Hello from codex-thing!")
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
-
-if __name__ == "__main__":
-    main()
+print(os.getenv("GEMINI_API_KEY"))
