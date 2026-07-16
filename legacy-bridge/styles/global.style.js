@@ -1,0 +1,51 @@
+export const globalStyles = {
+  appShell: "min-h-screen bg-slate-50 text-slate-950",
+  page: "mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-5 sm:px-6 md:gap-8 md:px-8 md:py-8",
+  pageHeader: "flex flex-col gap-2 md:max-w-3xl",
+  eyebrow: "text-xs font-semibold uppercase tracking-wide text-teal-700",
+  pageTitle: "text-2xl font-semibold tracking-normal text-slate-950 md:text-4xl",
+  pageDescription: "text-sm leading-6 text-slate-600 md:text-base",
+
+  header: "sticky top-0 z-30 border-b border-slate-200 bg-white",
+  headerInner: "mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8",
+  brand: "flex items-center gap-3 text-base font-semibold text-slate-950",
+  brandMark: "flex h-9 w-9 items-center justify-center rounded-lg bg-teal-700 text-sm font-bold text-white",
+  nav: "flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600 lg:justify-end",
+  navLink: "rounded-md px-3 py-2 transition hover:bg-slate-100 hover:text-slate-950",
+  profileBadge: "rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700",
+
+  section: "rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6",
+  sectionHeader: "flex flex-col gap-1 md:flex-row md:items-end md:justify-between",
+  sectionTitle: "text-lg font-semibold text-slate-950 md:text-xl",
+  sectionDescription: "text-sm leading-6 text-slate-600",
+  statsGrid: "grid grid-cols-1 gap-3 sm:grid-cols-3 md:gap-4",
+  statCard: "rounded-lg border border-slate-200 bg-white p-4 shadow-sm",
+  statLabel: "text-sm font-medium text-slate-500",
+  statValue: "mt-2 text-2xl font-semibold text-slate-950 md:text-3xl",
+
+  tableWrap: "overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm",
+  tableScroll: "w-full overflow-x-auto",
+  table: "min-w-full divide-y divide-slate-200 text-left text-sm",
+  tableHead: "bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500",
+  tableHeadCell: "whitespace-nowrap px-4 py-3",
+  tableRow: "divide-x divide-slate-100",
+  tableCell: "whitespace-nowrap px-4 py-3 text-slate-700",
+
+  fieldLabel: "text-sm font-medium text-slate-700",
+  input: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-100",
+  checkbox:
+    "h-5 w-5 shrink-0 cursor-pointer rounded border-slate-300 text-teal-700 focus:ring-2 focus:ring-teal-100",
+  warningInput: "border-amber-400 focus:border-amber-500 focus:ring-amber-100",
+  searchInput: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-100 md:max-w-md",
+
+  buttonBase: "inline-flex min-h-11 items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+  primaryButton: "bg-teal-700 text-white hover:bg-teal-800 focus:ring-teal-600",
+  secondaryButton: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-400",
+  dangerButton: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
+  successButton: "bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500",
+
+  badge: "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
+  badgePending: "bg-amber-100 text-amber-800",
+  badgeVerified: "bg-emerald-100 text-emerald-800",
+  badgeFlagged: "bg-red-100 text-red-800",
+};
