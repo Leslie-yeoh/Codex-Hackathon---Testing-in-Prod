@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import AppShell from "../../components/Layout/AppShell";
 import Container from "../../components/Container/Container";
 import Button from "../../components/Button/Button";
+import InputField from "../../components/Form/InputField";
+import ToggleRow from "../../components/Form/ToggleRow";
 import { globalStyles } from "../../styles/global.style";
 import {
   LANGUAGE_OPTIONS,
@@ -15,13 +16,14 @@ import styles from "./settings.style";
 import { isThemeSelected } from "./utils/settingsForm.utils";
 
 export default function SettingsPage() {
-  const [activeSection, setActiveSection] = useState(SETTINGS_SECTIONS[0].key);
-  const [visiblePasswords, setVisiblePasswords] = useState({});
   const {
     accountForm,
+    activeSection,
+    activeSectionLabel,
     isCookieConsentEnabled,
     isHighContrast,
     language,
+    setActiveSection,
     setIsCookieConsentEnabled,
     setIsHighContrast,
     setLanguage,
@@ -29,17 +31,6 @@ export default function SettingsPage() {
     theme,
     updateAccountField,
   } = useSettingsForm();
-
-  const togglePasswordVisibility = (field) => {
-    setVisiblePasswords((current) => ({
-      ...current,
-      [field]: !current[field],
-    }));
-  };
-
-  const activeSectionLabel =
-    SETTINGS_SECTIONS.find((section) => section.key === activeSection)?.label ||
-    SETTINGS_SECTIONS[0].label;
 
   return (
     <AppShell>
@@ -149,40 +140,31 @@ export default function SettingsPage() {
 
             <div className={styles.passwordSection}>
               <h3 className={styles.subsectionTitle}>Password</h3>
-              <label className={styles.fieldGroup}>
-                <span className={globalStyles.fieldLabel}>Current Password</span>
-                <PasswordInput
-                  isVisible={visiblePasswords.currentPassword}
-                  onToggle={() => togglePasswordVisibility("currentPassword")}
-                  onChange={(value) =>
-                    updateAccountField("currentPassword", value)
-                  }
-                  value={accountForm.currentPassword}
-                  placeholder="Enter current password"
-                />
-              </label>
-              <label className={styles.fieldGroup}>
-                <span className={globalStyles.fieldLabel}>New Password</span>
-                <PasswordInput
-                  isVisible={visiblePasswords.newPassword}
-                  onToggle={() => togglePasswordVisibility("newPassword")}
-                  onChange={(value) => updateAccountField("newPassword", value)}
-                  value={accountForm.newPassword}
-                  placeholder="Enter new password"
-                />
-              </label>
-              <label className={styles.fieldGroup}>
-                <span className={globalStyles.fieldLabel}>Confirm New Password</span>
-                <PasswordInput
-                  isVisible={visiblePasswords.confirmNewPassword}
-                  onToggle={() => togglePasswordVisibility("confirmNewPassword")}
-                  onChange={(value) =>
-                    updateAccountField("confirmNewPassword", value)
-                  }
-                  value={accountForm.confirmNewPassword}
-                  placeholder="Confirm new password"
-                />
-              </label>
+              <InputField
+                label="Current Password"
+                type="password"
+                onChange={(value) =>
+                  updateAccountField("currentPassword", value)
+                }
+                value={accountForm.currentPassword}
+                placeholder="Enter current password"
+              />
+              <InputField
+                label="New Password"
+                type="password"
+                onChange={(value) => updateAccountField("newPassword", value)}
+                value={accountForm.newPassword}
+                placeholder="Enter new password"
+              />
+              <InputField
+                label="Confirm New Password"
+                type="password"
+                onChange={(value) =>
+                  updateAccountField("confirmNewPassword", value)
+                }
+                value={accountForm.confirmNewPassword}
+                placeholder="Confirm new password"
+              />
             </div>
 
             <Button type="button">Save Security</Button>
@@ -261,37 +243,3 @@ export default function SettingsPage() {
   );
 }
 
-function PasswordInput({ isVisible, onChange, onToggle, placeholder, value }) {
-  return (
-    <span className={styles.passwordInputWrap}>
-      <input
-        className={styles.passwordInput}
-        type={isVisible ? "text" : "password"}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-      />
-      <button
-        type="button"
-        className={styles.passwordToggle}
-        onClick={onToggle}
-      >
-        {isVisible ? "Hide" : "Show"}
-      </button>
-    </span>
-  );
-}
-
-function ToggleRow({ checked, label, onChange }) {
-  return (
-    <label className={styles.toggleRow}>
-      <span>{label}</span>
-      <input
-        type="checkbox"
-        className={globalStyles.checkbox}
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-    </label>
-  );
-}

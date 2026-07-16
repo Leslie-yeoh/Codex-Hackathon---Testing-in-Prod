@@ -1,23 +1,27 @@
+"use client";
+
 import Container from "../Container/Container";
 import { globalStyles } from "../../styles/global.style";
-import {
-  DASHBOARD_KPIS,
-  DASHBOARD_MODULE_HEALTH,
-  DASHBOARD_SYSTEM_CONDITIONS,
-  DASHBOARD_WEEKLY_VOLUME,
-} from "../../constants/mock/dashboard.mock";
+import useDashboardOverview from "../../app/dashboard/hooks/useDashboardOverview";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 export default function DashboardContent() {
+  const {
+    kpis,
+    moduleHealth,
+    systemConditions,
+    weeklyVolume,
+  } = useDashboardOverview();
   const maxWeeklyVolume = Math.max(
-    ...DASHBOARD_WEEKLY_VOLUME.map((item) => item.records)
+    ...weeklyVolume.map((item) => item.records),
+    1
   );
 
   return (
     <div className={styles.contentStack}>
       <section className={globalStyles.statsGrid}>
-        {DASHBOARD_KPIS.map((item) => (
+        {kpis.map((item) => (
           <StatCard key={item.label} label={item.label} value={item.value} />
         ))}
       </section>
@@ -25,7 +29,7 @@ export default function DashboardContent() {
       <section className={styles.grid}>
         <Container title="Weekly Processing Volume">
           <div className={styles.chart}>
-            {DASHBOARD_WEEKLY_VOLUME.map((item) => (
+            {weeklyVolume.map((item) => (
               <div key={item.day} className={styles.barItem}>
                 <div className={styles.barTrack}>
                   <div
@@ -47,7 +51,7 @@ export default function DashboardContent() {
 
         <Container title="System Health">
           <div className={styles.healthList}>
-            {DASHBOARD_MODULE_HEALTH.map((item) => (
+            {moduleHealth.map((item) => (
               <div key={item.name} className={styles.healthItem}>
                 <div>
                   <p className={styles.healthTitle}>{item.name}</p>
@@ -71,7 +75,7 @@ export default function DashboardContent() {
 
       <Container title="System Condition">
         <div className={styles.conditionGrid}>
-          {DASHBOARD_SYSTEM_CONDITIONS.map((item) => (
+          {systemConditions.map((item) => (
             <div key={item.label} className={styles.conditionCard}>
               <div className={styles.conditionHeader}>
                 <p className={styles.conditionLabel}>{item.label}</p>

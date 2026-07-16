@@ -1,4 +1,5 @@
 import "./globals.css";
+import UniversalFooter from "../components/Footer/UniversalFooter";
 import ThemeProvider from "../components/Theme/ThemeProvider";
 
 export const metadata = {
@@ -29,7 +30,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className="min-h-full">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <UniversalFooter />
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Button from "../../../../components/Button/Button";
 import Container from "../../../../components/Container/Container";
+import ToggleRow from "../../../../components/Form/ToggleRow";
 import { globalStyles } from "../../../../styles/global.style";
 import {
   BACKUP_FREQUENCY_OPTIONS,
@@ -11,33 +11,12 @@ import {
   SECURITY_SYSTEM_SETTINGS,
   SITE_CONFIGURATION,
 } from "../constants";
+import useAdminSettingsForm from "../hooks/useAdminSettingsForm";
 import styles from "../settings.style";
 
 export default function AdminSettingsContent() {
-  const [toggles, setToggles] = useState(
-    Object.fromEntries(
-      SECURITY_SYSTEM_SETTINGS.map((setting) => [setting.label, setting.enabled])
-    )
-  );
-  const [backupForm, setBackupForm] = useState({
-    frequency: "daily",
-    retention: "90",
-    backupWindow: "02:00",
-  });
-
-  const updateToggle = (label, enabled) => {
-    setToggles((current) => ({
-      ...current,
-      [label]: enabled,
-    }));
-  };
-
-  const updateBackupField = (field, value) => {
-    setBackupForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
-  };
+  const { backupForm, toggles, updateBackupField, updateToggle } =
+    useAdminSettingsForm();
 
   return (
     <section className={styles.layout}>
@@ -58,22 +37,13 @@ export default function AdminSettingsContent() {
       <Container as="article" title="Security & System">
         <div className={styles.optionList}>
           {SECURITY_SYSTEM_SETTINGS.map((setting) => (
-            <label key={setting.label} className={styles.toggleRow}>
-              <span>
-                <span className={styles.toggleTitle}>{setting.label}</span>
-                <span className={styles.toggleDescription}>
-                  {setting.description}
-                </span>
-              </span>
-              <input
-                type="checkbox"
-                className={globalStyles.checkbox}
-                checked={toggles[setting.label]}
-                onChange={(event) =>
-                  updateToggle(setting.label, event.target.checked)
-                }
-              />
-            </label>
+            <ToggleRow
+              key={setting.label}
+              checked={toggles[setting.label]}
+              description={setting.description}
+              label={setting.label}
+              onChange={(checked) => updateToggle(setting.label, checked)}
+            />
           ))}
         </div>
         <div className={styles.actions}>

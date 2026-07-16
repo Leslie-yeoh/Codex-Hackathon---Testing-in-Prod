@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useState } from "react";
 import { getCurrentUser } from "../../../services/login/loginService";
+import { SETTINGS_SECTIONS } from "../constants";
 
 const themeStorageKey = "legacyBridgeTheme";
 const contrastStorageKey = "legacyBridgeHighContrast";
@@ -36,6 +37,7 @@ const getInitialAccountForm = () => {
 };
 
 export default function useSettingsForm() {
+  const [activeSection, setActiveSection] = useState(SETTINGS_SECTIONS[0].key);
   const [accountForm, setAccountForm] = useState(getInitialAccountForm);
   const [theme, setTheme] = useState(getStoredTheme);
   const [isHighContrast, setIsHighContrast] = useState(getStoredContrast);
@@ -82,11 +84,18 @@ export default function useSettingsForm() {
     setAccountForm((current) => ({ ...current, [field]: value }));
   };
 
+  const activeSectionLabel =
+    SETTINGS_SECTIONS.find((section) => section.key === activeSection)?.label ||
+    SETTINGS_SECTIONS[0].label;
+
   return {
     accountForm,
+    activeSection,
+    activeSectionLabel,
     isCookieConsentEnabled,
     isHighContrast,
     language,
+    setActiveSection,
     setIsCookieConsentEnabled,
     setIsHighContrast,
     setLanguage,

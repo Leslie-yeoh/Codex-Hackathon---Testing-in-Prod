@@ -1,29 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Container from "../Container/Container";
 import { LOG_TYPE_OPTIONS } from "../../app/logs/constants";
+import useAuditLogs from "../../app/logs/hooks/useAuditLogs";
 import styles from "../../app/logs/logs.style";
-import { initialAuditLogs } from "../../constants/mock/logs.mock";
 import { globalStyles } from "../../styles/global.style";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 export default function LogsContent() {
-  const [query, setQuery] = useState("");
-  const [type, setType] = useState("All");
-
-  const filteredLogs = useMemo(
-    () =>
-      initialAuditLogs.filter((log) => {
-        const matchesQuery = `${log.operator} ${log.id} ${log.description}`
-          .toLowerCase()
-          .includes(query.toLowerCase());
-        const matchesType = type === "All" || log.type === type;
-        return matchesQuery && matchesType;
-      }),
-    [query, type]
-  );
+  const { filteredLogs, query, setQuery, setType, type } = useAuditLogs();
 
   return (
     <Container title="Audit Timeline">
