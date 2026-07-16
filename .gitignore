@@ -1,0 +1,8 @@
+.agents
+
+.env
+
+output/
+images/
+
+__pycache__/
