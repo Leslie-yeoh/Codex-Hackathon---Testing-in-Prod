@@ -1,4 +1,4 @@
-import AboutContent from "../../components/About/AboutContent";
+import AboutContent from "./components/AboutContent";
 import AppShell from "../../components/Layout/AppShell";
 import PageHeader from "../../components/Layout/PageHeader";
 

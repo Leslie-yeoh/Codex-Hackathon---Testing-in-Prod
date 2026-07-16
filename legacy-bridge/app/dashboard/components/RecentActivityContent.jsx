@@ -1,6 +1,6 @@
-import Container from "../Container/Container";
-import { DASHBOARD_ACTIVITY } from "../../constants/mock/dashboard.mock";
-import { globalStyles } from "../../styles/global.style";
+import Container from "../../../components/Container/Container";
+import { DASHBOARD_ACTIVITY } from "../../../constants/mock/dashboard.mock";
+import { globalStyles } from "../../../styles/global.style";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 

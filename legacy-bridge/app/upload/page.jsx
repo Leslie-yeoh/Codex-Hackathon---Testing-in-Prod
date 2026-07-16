@@ -1,6 +1,6 @@
 import AppShell from "../../components/Layout/AppShell";
 import PageHeader from "../../components/Layout/PageHeader";
-import UploadWorkspace from "../../components/Upload/UploadWorkspace";
+import UploadWorkspace from "./components/UploadWorkspace";
 
 export default function UploadPage() {
   return (

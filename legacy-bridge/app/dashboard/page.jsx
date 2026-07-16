@@ -1,4 +1,4 @@
-import DashboardContent from "../../components/Dashboard/DashboardContent";
+import DashboardContent from "./components/DashboardContent";
 import AppShell from "../../components/Layout/AppShell";
 import PageHeader from "../../components/Layout/PageHeader";
 

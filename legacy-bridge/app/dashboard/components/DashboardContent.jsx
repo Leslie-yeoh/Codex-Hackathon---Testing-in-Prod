@@ -1,8 +1,8 @@
 "use client";
 
-import Container from "../Container/Container";
-import { globalStyles } from "../../styles/global.style";
-import useDashboardOverview from "../../app/dashboard/hooks/useDashboardOverview";
+import Container from "../../../components/Container/Container";
+import { globalStyles } from "../../../styles/global.style";
+import useDashboardOverview from "../hooks/useDashboardOverview";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
