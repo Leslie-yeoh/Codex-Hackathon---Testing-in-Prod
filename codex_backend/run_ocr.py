@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from pathlib import Path
-from ai import create_workflow
+from codex_backend.ai import create_workflow
 
 
 def main():

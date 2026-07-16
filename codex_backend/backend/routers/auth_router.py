@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, status
 
-from backend.services.auth import (
+from codex_backend.backend.services.auth import (
     LoginRequest,
     SignupRequest,
     TokenResponse,

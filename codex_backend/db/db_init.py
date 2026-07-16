@@ -3,7 +3,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
-from db.mongo_ocr import MongoDBClient
+from codex_backend.db.mongo_ocr import MongoDBClient
 
 load_dotenv()
 

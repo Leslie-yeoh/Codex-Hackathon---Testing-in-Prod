@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import HTMLResponse
 
-from backend.services.ocr import (
+from codex_backend.backend.services.ocr import (
     Base64ImageRequest,
     BatchOCRResponse,
     HealthResponse,

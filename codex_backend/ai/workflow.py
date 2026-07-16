@@ -10,9 +10,9 @@ from typing import Optional, List
 from pathlib import Path
 from datetime import datetime
 
-from ai.vlm_client import GeminiVLMClient, NVIDIAVLMClient, SyncGeminiVLMClient, SyncNVIDIAVLMClient, VLMResponse
-from ai.preprocessor import preprocess_handwriting, HandwritingPreprocessor
-from db.mongo_ocr import MongoDBClient
+from codex_backend.ai.vlm_client import GeminiVLMClient, NVIDIAVLMClient, SyncGeminiVLMClient, SyncNVIDIAVLMClient, VLMResponse
+from codex_backend.ai.preprocessor import preprocess_handwriting, HandwritingPreprocessor
+from codex_backend.db.mongo_ocr import MongoDBClient
 
 from dotenv import load_dotenv
 load_dotenv()

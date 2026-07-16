@@ -14,7 +14,7 @@ import httpx
 from fastapi import HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
-from ai import DoctorHandwritingWorkflow, ProcessingResult, create_workflow
+from codex_backend.ai import DoctorHandwritingWorkflow, ProcessingResult, create_workflow
 
 workflow: DoctorHandwritingWorkflow | None = None
 
