@@ -11,8 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from codex_backend.backend.routers import router
-from codex_backend.backend.services.ocr import init_workflow
+from codex_backend.routers import router
+from codex_backend.services.ocr import init_workflow
 
 app = FastAPI(
     title="Doctor Handwriting OCR API",

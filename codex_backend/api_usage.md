@@ -2,9 +2,10 @@
 
 ## Start the Server
 
-```bash
-cd codex-thing
-uvicorn backend.route:app --host 0.0.0.0 --port 8000
+From the project root (`codex-thing`):
+
+```powershell
+$env:VIRTUAL_ENV=''; & "codex_backend\.venv\Scripts\python.exe" -m uvicorn codex_backend.route:app --host 0.0.0.0 --port 8000
 ```
 
 ## Endpoints
@@ -15,7 +16,39 @@ uvicorn backend.route:app --host 0.0.0.0 --port 8000
 curl http://localhost:8000/health
 ```
 
-### 2. Upload Image File
+### 2. Sign Up
+
+```bash
+curl -X POST http://localhost:8000/auth/signup \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"demo\",\"password\":\"password123\",\"confirm_password\":\"password123\"}"
+```
+
+### 3. Log In
+
+```bash
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"demo\",\"password\":\"password123\"}"
+```
+
+Response:
+
+```json
+{
+  "access_token": "eyJ...",
+  "token_type": "bearer"
+}
+```
+
+### 4. Get Current User
+
+```bash
+curl http://localhost:8000/auth/me \
+  -H "Authorization: Bearer eyJ..."
+```
+
+### 5. Upload Image File
 
 ```bash
 curl -X POST http://localhost:8000/ocr/handwriting \
@@ -23,7 +56,7 @@ curl -X POST http://localhost:8000/ocr/handwriting \
   -F "enhance=true"
 ```
 
-### 3. Upload Multiple Files
+### 6. Upload Multiple Files
 
 ```bash
 curl -X POST http://localhost:8000/ocr/handwriting/batch \
@@ -32,7 +65,15 @@ curl -X POST http://localhost:8000/ocr/handwriting/batch \
   -F "enhance=true"
 ```
 
-### 4. Send Base64 Image
+### 7. Process Server File Path
+
+```bash
+curl -X POST http://localhost:8000/ocr/handwriting/filepath \
+  -F "image_path=images/doctor_note_1.jpg" \
+  -F "enhance=true"
+```
+
+### 8. Send Base64 Image
 
 ```bash
 curl -X POST http://localhost:8000/ocr/handwriting/base64 \
@@ -50,7 +91,7 @@ curl -X POST http://localhost:8000/ocr/handwriting/base64 `
   -d $body
 ```
 
-### 5. Process Image from URL
+### 9. Process Image from URL
 
 ```bash
 curl -X POST http://localhost:8000/ocr/handwriting/url \
@@ -58,7 +99,7 @@ curl -X POST http://localhost:8000/ocr/handwriting/url \
   -d "{\"image_url\": \"https://example.com/prescription.jpg\"}"
 ```
 
-### 6. Web Upload Form
+### 10. Web Upload Form
 
 Open in browser:
 
@@ -66,7 +107,7 @@ Open in browser:
 http://localhost:8000/upload
 ```
 
-## Response Format
+## OCR Response Format
 
 ```json
 {
@@ -78,9 +119,12 @@ http://localhost:8000/upload
   "processing_time_ms": 6200.0,
   "preprocessed_image_saved": true,
   "metadata": {
+    "image_path": "C:\\Users\\...\\upload.jpg",
+    "preprocessed_path": "preprocessed_images/...jpg",
     "reasoning": "The user wants me to extract the text...",
     "usage": {"prompt_tokens": 562, "completion_tokens": 584, "total_tokens": 1146},
-    "timestamp": "2026-07-14T22:13:53.761558"
+    "timestamp": "2026-07-14T22:13:53.761558",
+    "error": null
   }
 }
 ```
@@ -102,3 +146,4 @@ http://localhost:8000/upload
 - Set `enhance=false` to skip preprocessing and send the raw image.
 - `low_confidence_flag` is `true` when confidence < 0.8.
 - Add `custom_prompt` form field to override the default VLM instructions.
+- Auth uses MongoDB from `MONGO_URI` and signs JWTs with `JWT_SECRET`.
