@@ -1,7 +1,11 @@
 import os
 from typing import Optional
 
+from dotenv import load_dotenv
+
 from db.mongo_ocr import MongoDBClient
+
+load_dotenv()
 
 _db_client: Optional[MongoDBClient] = None
 
@@ -30,3 +34,4 @@ def close_db():
         _db_client.close()
         _db_client = None
         print("MongoDB client closed")
+

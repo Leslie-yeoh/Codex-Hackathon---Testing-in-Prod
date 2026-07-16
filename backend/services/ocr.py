@@ -225,7 +225,7 @@ def get_health() -> HealthResponse:
     """Return OCR service health details."""
 
     wf = get_workflow()
-    return HealthResponse(status="healthy", model=wf.model, api_configured=bool(wf.api_key))
+    return HealthResponse(status="healthy", model=wf.gemini_model, api_configured=bool(wf.gemini_api_key and wf.api_key))
 
 
 def get_upload_form_html() -> str:
@@ -344,3 +344,4 @@ def get_upload_form_html() -> str:
 </body>
 </html>
 """
+

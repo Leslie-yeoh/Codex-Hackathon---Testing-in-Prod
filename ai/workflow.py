@@ -10,10 +10,12 @@ from typing import Optional, List
 from pathlib import Path
 from datetime import datetime
 
-from ai.vlm_client import NVIDIAVLMClient, SyncNVIDIAVLMClient, VLMResponse
+from ai.vlm_client import GeminiVLMClient, NVIDIAVLMClient, SyncGeminiVLMClient, SyncNVIDIAVLMClient, VLMResponse
 from ai.preprocessor import preprocess_handwriting, HandwritingPreprocessor
 from db.mongo_ocr import MongoDBClient
 
+from dotenv import load_dotenv
+load_dotenv()
 
 def calculate_confidence(usage: Optional[dict], reasoning: Optional[str]) -> float:
     if not usage:
@@ -47,7 +49,9 @@ class DoctorHandwritingWorkflow:
     def __init__(
         self,
         api_key: Optional[str] = None,
+        gemini_api_key: Optional[str] = None,
         model: str = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        gemini_model: str = "gemini-2.5-flash",
         preprocess: bool = True,
         preprocess_dir: str = "images/preprocessed",
         output_dir: str = "output",
@@ -55,9 +59,11 @@ class DoctorHandwritingWorkflow:
         mongo_client: Optional[MongoDBClient] = None,
     ):
         self.api_key = api_key or os.getenv("NVIDIA_NIM_API_KEY")
+        self.gemini_api_key = gemini_api_key or os.getenv("GEMINI_API_KEY")
         if not self.api_key:
             raise ValueError("NVIDIA_NIM_API_KEY not found")
         self.model = model
+        self.gemini_model = gemini_model
         self.preprocess = preprocess
         self.preprocess_dir = preprocess_dir
         self.output_dir = output_dir
@@ -122,8 +128,13 @@ class DoctorHandwritingWorkflow:
         start_time: float,
         timestamp: str,
     ) -> ProcessingResult:
-        with SyncNVIDIAVLMClient(api_key=self.api_key, model=self.model) as client:
-            response = client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+        try:
+            with SyncGeminiVLMClient(api_key=self.gemini_api_key, model=self.gemini_model) as client:
+                response = client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+        except Exception as exc:
+            print(f"Gemini OCR failed, falling back to NVIDIA: {exc}")
+            with SyncNVIDIAVLMClient(api_key=self.api_key, model=self.model) as client:
+                response = client.interpret_handwriting(process_path, prompt=self.custom_prompt)
 
         processing_time = (time.time() - start_time) * 1000
         confidence = calculate_confidence(response.usage, response.reasoning)
@@ -148,8 +159,13 @@ class DoctorHandwritingWorkflow:
         start_time: float,
         timestamp: str,
     ) -> ProcessingResult:
-        async with NVIDIAVLMClient(api_key=self.api_key, model=self.model) as client:
-            response = await client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+        try:
+            async with GeminiVLMClient(api_key=self.gemini_api_key, model=self.gemini_model) as client:
+                response = await client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+        except Exception as exc:
+            print(f"Gemini OCR failed, falling back to NVIDIA: {exc}")
+            async with NVIDIAVLMClient(api_key=self.api_key, model=self.model) as client:
+                response = await client.interpret_handwriting(process_path, prompt=self.custom_prompt)
 
         processing_time = (time.time() - start_time) * 1000
         confidence = calculate_confidence(response.usage, response.reasoning)
@@ -256,3 +272,5 @@ def create_workflow(
         mongo_client.connect()
         print("MongoDB client initialized and connected")
     return DoctorHandwritingWorkflow(api_key=api_key, mongo_client=mongo_client, **kwargs)
+
+
