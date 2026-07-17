@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -16,15 +17,15 @@ from pydantic import BaseModel, Field
 
 load_dotenv()
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI", "mongodb://localhost:27017")
 JWT_SECRET = os.getenv("JWT_SECRET", "change-me")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "30"))
 
-client = AsyncIOMotorClient(MONGO_URI)
+client = AsyncIOMotorClient(MONGO_URI, serverSelectionTimeoutMS=10000)
 users_collection = client["codex"]["users"]
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
@@ -32,6 +33,7 @@ class SignupRequest(BaseModel):
     """Signup payload."""
 
     username: str = Field(min_length=1)
+    email: str = Field(min_length=3)
     password: str = Field(min_length=8)
     confirm_password: str = Field(min_length=8)
 
@@ -39,7 +41,7 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     """Login payload."""
 
-    username: str = Field(min_length=1)
+    email: str = Field(min_length=3)
     password: str = Field(min_length=1)
 
 
@@ -54,18 +56,19 @@ class UserResponse(BaseModel):
     """Public user response."""
 
     username: str
+    email: str
 
 
 def hash_password(password: str) -> str:
     """Hash a plaintext password with bcrypt."""
 
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(hashlib.sha256(password.encode("utf-8")).digest(), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plaintext password against a stored bcrypt hash."""
 
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(hashlib.sha256(plain_password.encode("utf-8")).digest(), hashed_password.encode("utf-8"))
 
 
 def create_access_token(subject: str, user_id: str) -> str:
@@ -94,19 +97,19 @@ async def signup_user(payload: SignupRequest) -> UserResponse:
     if payload.password != payload.confirm_password:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="passwords do not match")
 
-    if await users_collection.find_one({"username": payload.username}):
+    if await users_collection.find_one({"$or": [{"username": payload.username}, {"email": payload.email}]}):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username already exists")
 
     await users_collection.insert_one(
-        {"username": payload.username, "hashed_password": hash_password(payload.password)}
+        {"username": payload.username, "email": payload.email, "hashed_password": hash_password(payload.password)}
     )
-    return UserResponse(username=payload.username)
+    return UserResponse(username=payload.username, email=payload.email)
 
 
 async def login_user(payload: LoginRequest) -> TokenResponse:
     """Authenticate a user and return an access token."""
 
-    user = await users_collection.find_one({"username": payload.username})
+    user = await users_collection.find_one({"$or": [{"email": payload.email}, {"username": payload.email}]})
     if not user or not verify_password(payload.password, user["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -114,7 +117,7 @@ async def login_user(payload: LoginRequest) -> TokenResponse:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return TokenResponse(access_token=create_access_token(payload.username, str(user["_id"])))
+    return TokenResponse(access_token=create_access_token(user["username"], str(user["_id"])))
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any]:
@@ -136,4 +139,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
+
+
+
+
+
 

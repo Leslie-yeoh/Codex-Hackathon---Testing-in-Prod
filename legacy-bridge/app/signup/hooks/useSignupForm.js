@@ -24,7 +24,7 @@ export default function useSignupForm() {
     setAlertMessage("");
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const { nextForm, nextErrors, isValid } = validateSignupForm(form);
@@ -37,7 +37,7 @@ export default function useSignupForm() {
       return;
     }
 
-    const result = registerUser(nextForm);
+    const result = await registerUser(nextForm);
 
     if (!result.ok) {
       setAlertMessage(result.message);
@@ -55,3 +55,4 @@ export default function useSignupForm() {
     updateField,
   };
 }
+

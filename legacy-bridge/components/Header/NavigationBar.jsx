@@ -41,7 +41,7 @@ export default function NavigationBar() {
     signOut();
     closeMenus();
     setIsSignOutModalOpen(false);
-    router.push("/home");
+    window.location.reload();
   };
 
   const requestSignOut = () => {

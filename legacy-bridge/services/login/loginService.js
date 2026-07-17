@@ -6,8 +6,11 @@ import {
 } from "../../utils/globalFormatter";
 import ServiceConfigService from "../config/serviceConfigService";
 import NormalizationService from "../normalization/normalizationService";
+import { apiClient } from "../api/apiClient";
 
 const USE_MOCK = ServiceConfigService.shouldDisplayMockActions();
+
+
 const registeredUsersKey = "legacyBridgeRegisteredUsers";
 const rememberedEmailKey = "legacyBridgeRememberedEmail";
 const currentUserKey = "legacyBridgeCurrentUser";
@@ -64,6 +67,9 @@ const normalizeUser = (user) => ({
 
 class LoginService {
   static registerUser({ username, email, password }) {
+    if (!ServiceConfigService.shouldDisplayMockActions()) {
+      return apiClient("/auth/signup", { method: "POST", body: JSON.stringify({ username, email, password, confirm_password: password }) }).then((user) => ({ ok: true, user: normalizeUser(user) })).catch((error) => ({ ok: false, message: error.message }));
+    }
     const apiPayload = NormalizationService.userToBackend({
       username,
       email,
@@ -109,6 +115,15 @@ class LoginService {
   }
 
   static authenticateUser({ email, password }) {
+    if (!ServiceConfigService.shouldDisplayMockActions()) {
+      return apiClient("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }).then(async (token) => {
+        window.sessionStorage.setItem("legacyBridgeAccessToken", token.access_token);
+        const user = await apiClient("/auth/me", { headers: { Authorization: `Bearer ${token.access_token}` } });
+        const normalizedUser = normalizeUser(user);
+        this.writeCurrentUser(normalizedUser);
+        return { ok: true, user: normalizedUser };
+      }).catch((error) => ({ ok: false, message: error.message }));
+    }
     const apiPayload = NormalizationService.userToBackend({ email, password });
 
     if (!USE_MOCK) {
@@ -355,3 +370,6 @@ export const saveRememberedEmail = (email) =>
 export const clearRememberedEmail = () => LoginService.clearRememberedEmail();
 
 export default LoginService;
+
+
+

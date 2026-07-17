@@ -37,4 +37,5 @@ async def login(payload: LoginRequest) -> TokenResponse:
 async def me(current_user: dict[str, Any] = Depends(get_current_user)) -> UserResponse:
     """Return the current authenticated user."""
 
-    return UserResponse(username=current_user["username"])
+    return UserResponse(username=current_user["username"], email=current_user.get("email", ""))
+

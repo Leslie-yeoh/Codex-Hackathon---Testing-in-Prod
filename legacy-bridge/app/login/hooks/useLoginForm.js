@@ -45,7 +45,7 @@ export default function useLoginForm() {
     setAlertMessage("");
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const { nextForm, nextErrors, isValid } = validateLoginForm(form);
@@ -58,7 +58,7 @@ export default function useLoginForm() {
       return;
     }
 
-    const result = authenticateUser(nextForm);
+    const result = await authenticateUser(nextForm);
 
     if (!result.ok) {
       setAlertMessage(result.message);
@@ -83,3 +83,4 @@ export default function useLoginForm() {
     updateField,
   };
 }
+

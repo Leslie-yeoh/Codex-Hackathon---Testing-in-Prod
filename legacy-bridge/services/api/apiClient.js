@@ -17,7 +17,8 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error("API request failed.");
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.detail || "API request failed.");
     }
 
     return response.json();
@@ -26,3 +27,5 @@ export class ApiClient {
 
 export const apiClient = (endpoint, options) =>
   ApiClient.request(endpoint, options);
+
+

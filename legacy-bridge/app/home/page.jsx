@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import Container from "../../components/Container/Container";
 import AppShell from "../../components/Layout/AppShell";
+import { useAuth } from "../../hooks/globalHooks";
 import { globalStyles } from "../../styles/global.style";
 import {
   HOME_CAPABILITIES,
@@ -13,8 +16,11 @@ import styles from "./home.style";
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 export default function HomePage() {
+  const { isSignedIn } = useAuth();
+
   return (
     <AppShell>
+      {!isSignedIn && (
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
           <h1 className={styles.heroTitle}>
@@ -74,6 +80,7 @@ export default function HomePage() {
           </div>
         </aside>
       </section>
+      )}
 
       <section className={globalStyles.statsGrid}>
         {HOME_IMPACT_STATS.map((stat) => (
