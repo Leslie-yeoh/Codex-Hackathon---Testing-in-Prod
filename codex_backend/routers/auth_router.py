@@ -12,6 +12,7 @@ from codex_backend.services.auth import (
     TokenResponse,
     UserResponse,
     get_current_user,
+    list_users,
     login_user,
     signup_user,
 )
@@ -32,7 +33,6 @@ async def login(payload: LoginRequest) -> TokenResponse:
 
     return await login_user(payload)
 
-
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: dict[str, Any] = Depends(get_current_user)) -> UserResponse:
     """Return the current authenticated user."""
@@ -43,3 +43,10 @@ async def me(current_user: dict[str, Any] = Depends(get_current_user)) -> UserRe
         role=current_user.get("role", "User"),
     )
 
+
+
+@router.get("/users", response_model=list[UserResponse])
+async def users(current_user: dict[str, Any] = Depends(get_current_user)) -> list[UserResponse]:
+    """List MongoDB users for administrators."""
+
+    return await list_users(current_user)

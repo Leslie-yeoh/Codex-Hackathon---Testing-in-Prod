@@ -1,7 +1,7 @@
 import hashlib
 import os
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, time, timedelta, timezone
 from typing import Any, Dict, Optional
 from uuid import uuid4
 
@@ -74,6 +74,30 @@ class MongoDBClient:
             metadata=metadata,
         )
         return str(file_id)
+
+    def get_weekly_ocr_volume(self) -> list[dict[str, Any]]:
+        """Count OCR uploads for today and the preceding six UTC days."""
+        if not self.connected:
+            self.connect()
+
+        today = datetime.now(timezone.utc).date()
+        start_date = today - timedelta(days=6)
+        start = datetime.combine(start_date, time.min)
+        end = start + timedelta(days=7)
+        counts = {start_date + timedelta(days=offset): 0 for offset in range(7)}
+
+        for file in self.db.fs.files.find(
+            {
+                "uploadDate": {"$gte": start, "$lt": end},
+            },
+            {"uploadDate": 1},
+        ):
+            counts[file["uploadDate"].date()] += 1
+
+        return [
+            {"day": day.strftime("%a"), "records": counts[day]}
+            for day in counts
+        ]
 
     def finalize_ocr_upload(
         self,

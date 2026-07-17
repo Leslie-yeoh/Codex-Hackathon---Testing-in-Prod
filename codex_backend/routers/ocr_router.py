@@ -45,6 +45,13 @@ async def health_check() -> HealthResponse:
     return get_health()
 
 
+@router.get("/dashboard/weekly-volume")
+async def get_weekly_ocr_volume(
+    _: dict[str, Any] = Depends(get_current_user),
+) -> list[dict[str, Any]]:
+    """Return OCR process counts from doctor_ocr.fs.files for the last seven days."""
+    return get_ocr_storage().get_weekly_ocr_volume()
+
 @router.get("/ocr/records")
 async def list_ocr_records(
     current_user: dict[str, Any] = Depends(get_current_user),

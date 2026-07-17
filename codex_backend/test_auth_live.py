@@ -65,6 +65,13 @@ try:
     )
     assert admin_user.status_code == 200, admin_user.text
     assert admin_user.json()["role"] == "Admin"
+    user_list = httpx.get(
+        f"{base_url}/auth/users",
+        headers={"Authorization": f"Bearer {admin_login.json()['access_token']}"},
+        timeout=10,
+    )
+    assert user_list.status_code == 200, user_list.text
+    assert {"username": username, "email": email, "role": "Admin"} in user_list.json()
 
     assert httpx.post(
         f"{base_url}/auth/login",

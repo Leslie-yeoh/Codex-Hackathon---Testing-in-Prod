@@ -129,6 +129,21 @@ async def login_user(payload: LoginRequest) -> TokenResponse:
     return TokenResponse(access_token=create_access_token(user["username"], str(user["_id"])))
 
 
+async def list_users(current_user: dict[str, Any]) -> list[UserResponse]:
+    """Return all users to an administrator without password hashes."""
+
+    if current_user.get("role") != "Admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="admin access required")
+
+    return [
+        UserResponse(
+            username=user["username"],
+            email=user.get("email", ""),
+            role=user.get("role", "User"),
+        )
+        async for user in users_collection.find({}, {"_id": 0, "username": 1, "email": 1, "role": 1})
+    ]
+
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any]:
     """Return the current user from a Bearer token."""
 

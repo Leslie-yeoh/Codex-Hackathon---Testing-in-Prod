@@ -129,11 +129,16 @@ def main() -> None:
         assert saved_file == (b"successful-image", "image/png")
         assert mongo_client.get_confirmed_ocr_upload(success_id, "another-user") is None
 
+        weekly_volume = mongo_client.get_weekly_ocr_volume()
+        assert len(weekly_volume) == 7
+        assert sum(day["records"] for day in weekly_volume) == 1
+
         failed_id = asyncio.run(upload(b"failed-image", False, mongo_client, user_id))
         file_ids.append(failed_id)
         failed = mongo_client.db.fs.files.find_one({"_id": __import__("bson").ObjectId(failed_id)})
         assert failed["metadata"]["success"] is False
         assert failed["metadata"]["totalFindings"] == 0
+        assert sum(day["records"] for day in mongo_client.get_weekly_ocr_volume()) == 2
 
         pdf_id = asyncio.run(upload_pdf(mongo_client, user_id))
         file_ids.append(pdf_id)

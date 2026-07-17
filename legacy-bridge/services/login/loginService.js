@@ -185,6 +185,10 @@ class LoginService {
   }
 
   static getUsers() {
+    if (!ServiceConfigService.shouldDisplayMockActions()) {
+      return apiClient("/auth/users").then((users) => users.map(normalizeUser));
+    }
+
     return [
       ...frontendMockUsers.map((user) => ({
         ...normalizeUser(user),
