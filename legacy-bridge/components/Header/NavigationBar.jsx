@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "../../hooks/globalHooks";
 import { getNavigationItems } from "../../navigation/routes";
@@ -22,7 +22,6 @@ const getInitials = (name) =>
 
 export default function NavigationBar() {
   const pathname = usePathname();
-  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
@@ -43,7 +42,7 @@ export default function NavigationBar() {
     showToastAfterReload("Successfully signed out.", "error");
     closeMenus();
     setIsSignOutModalOpen(false);
-    window.location.reload();
+    window.location.assign("/home");
   };
 
   const requestSignOut = () => {

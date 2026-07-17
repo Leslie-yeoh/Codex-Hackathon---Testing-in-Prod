@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import json
 from html.parser import HTMLParser
 import os
 import re
@@ -31,6 +32,7 @@ class OCRResponse(BaseModel):
     processing_time_ms: float = Field(..., description="Processing time in milliseconds")
     preprocessed_image_saved: bool = Field(False, description="Whether preprocessed image was saved")
     metadata: dict = Field(default_factory=dict)
+    extracted_fields: list[dict[str, str]] = Field(default_factory=list)
     file_id: Optional[str] = Field(None, description="GridFS file ID")
 
 
@@ -74,9 +76,20 @@ class _MarkdownParser(HTMLParser):
         super().__init__()
         self.parts: list[str] = []
         self.list_depth = 0
+        self.in_table = False
+        self.table_rows: list[list[str]] = []
+        self.table_row: list[str] | None = None
+        self.table_cell: list[str] | None = None
 
     def handle_starttag(self, tag, attrs):
-        if tag in {"p", "div"}:
+        if tag == "table":
+            self.in_table = True
+            self.table_rows = []
+        elif tag == "tr" and self.in_table:
+            self.table_row = []
+        elif tag in {"td", "th"} and self.in_table:
+            self.table_cell = []
+        elif tag in {"p", "div"}:
             self.parts.append("\n\n")
         elif tag == "br":
             self.parts.append("\n")
@@ -93,7 +106,22 @@ class _MarkdownParser(HTMLParser):
             self.parts.append("\n" + "  " * max(self.list_depth - 1, 0) + "- ")
 
     def handle_endtag(self, tag):
-        if tag in {"strong", "b"}:
+        if tag in {"td", "th"} and self.table_cell is not None:
+            if self.table_row is not None:
+                self.table_row.append("".join(self.table_cell).strip())
+            self.table_cell = None
+        elif tag == "tr" and self.in_table and self.table_row is not None:
+            self.table_rows.append(self.table_row)
+            self.table_row = None
+        elif tag == "table" and self.in_table:
+            if self.table_rows:
+                width = len(self.table_rows[0])
+                rows = [row + [""] * (width - len(row)) for row in self.table_rows]
+                self.parts.append("\n\n| " + " | ".join(rows[0]) + " |\n")
+                self.parts.append("| " + " | ".join("---" for _ in rows[0]) + " |\n")
+                self.parts.extend("| " + " | ".join(row) + " |\n" for row in rows[1:])
+            self.in_table = False
+        elif tag in {"strong", "b"}:
             self.parts.append("**")
         elif tag in {"em", "i"}:
             self.parts.append("*")
@@ -102,8 +130,10 @@ class _MarkdownParser(HTMLParser):
             self.parts.append("\n")
 
     def handle_data(self, data):
-        self.parts.append(data)
-
+        if self.table_cell is not None:
+            self.table_cell.append(data)
+        else:
+            self.parts.append(data)
 
 def html_to_markdown(value: str) -> str:
     parser = _MarkdownParser()
@@ -144,18 +174,42 @@ def get_workflow() -> DoctorHandwritingWorkflow:
     return workflow
 
 
+def extract_structured_fields(text: str) -> list[dict[str, str]]:
+    candidates = re.findall(r"```(?:json)?\s*(\[.*?\])\s*```|(\[[^\[\]]*\])", text, re.IGNORECASE | re.DOTALL)
+    for fenced, inline in candidates:
+        try:
+            fields = json.loads(fenced or inline)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(fields, list):
+            return [
+                {
+                    "patient_reference": str(field.get("patient_reference", "")).strip(),
+                    "observations": str(field.get("observations", field.get("observation", ""))).strip(),
+                    "value": str(field.get("value", "")).strip(),
+                    "unit": str(field.get("unit", "")).strip(),
+                }
+                for field in fields
+                if isinstance(field, dict)
+            ]
+    return []
+
+
 def convert_result_to_response(result: ProcessingResult, file_id: str | None = None) -> OCRResponse:
     """Convert an internal OCR result into the API response model."""
 
+    extracted_fields = extract_structured_fields(result.extracted_text)
+    natural_language = re.sub(r"```(?:json)?\s*\[.*?\]\s*```|\[(?=[^\[\]]*\"patient_reference\")[^\[\]]*\]", "", result.extracted_text, flags=re.IGNORECASE | re.DOTALL).strip()
     return OCRResponse(
         success=result.success,
-        natural_language=result.extracted_text,
+        natural_language=natural_language,
         raw_text=result.raw_text,
         confidence=round(result.confidence, 3),
         low_confidence_flag=result.confidence < 0.8,
         processing_time_ms=round(result.processing_time_ms, 1),
         preprocessed_image_saved=result.preprocessed_path is not None,
         file_id=file_id,
+        extracted_fields=extracted_fields,
         metadata={
             "image_path": result.image_path,
             "preprocessed_path": result.preprocessed_path,

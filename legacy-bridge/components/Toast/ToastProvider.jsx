@@ -54,7 +54,15 @@ export default function ToastProvider({ children }) {
       {children}
       {toastState && (
         <div className={`toast toast-${toastState.variant}`} role="status">
-          {toastState.message}
+          <span>{toastState.message}</span>
+          <button
+            type="button"
+            className="toast-close"
+            aria-label="Close notification"
+            onClick={() => setToastState(null)}
+          >
+            ×
+          </button>
         </div>
       )}
     </ToastContext.Provider>

@@ -27,7 +27,7 @@ export class ApiClient {
       throw new Error(body.detail || "API request failed.");
     }
 
-    return response.json();
+    return options.responseType === "blob" ? response.blob() : response.json();
   }
 }
 

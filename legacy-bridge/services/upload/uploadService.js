@@ -27,24 +27,34 @@ const waitForMock = (value, signal) =>
     );
   });
 
-const normalizeExtraction = (data = {}) => ({
-  fileId: data.file_id ?? "",
-  patientId: "",
-  rawText: data.natural_language ?? data.raw_text ?? "",
-  findings: [],
-  confidence: data.low_confidence_flag
-    ? "Low confidence OCR result. Review before confirming."
-    : "Review the OCR result before confirming.",
-});
+const normalizeExtraction = (data = {}) => {
+  const fields = Array.isArray(data.extracted_fields)
+    ? data.extracted_fields
+    : data.extracted_fields ? [data.extracted_fields] : [];
+  return {
+    fileId: data.file_id ?? "",
+    patientId: fields.find((field) => field.patient_reference)?.patient_reference ?? "",
+    rawText: data.natural_language ?? data.raw_text ?? "",
+    findings: (fields.length ? fields : [{}]).map((field) => ({
+      observation: field.observations ?? field.observation ?? "",
+      value: field.value ?? "",
+      unit: field.unit ?? "",
+    })),
+    confidence: data.low_confidence_flag
+      ? "Low confidence OCR result. Review before confirming."
+      : "Review the OCR result before confirming.",
+  };
+};
 
 class UploadService {
-  static async extractDocument({ file, signal } = {}) {
+  static async extractDocument({ file, enhance = false, signal } = {}) {
     if (USE_MOCK) {
       return waitForMock({ ...extractedDefaults, fileId: "mock-upload" }, signal);
     }
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("enhance", String(enhance));
     const response = await apiClient("/ocr/handwriting", {
       method: "POST",
       body: formData,

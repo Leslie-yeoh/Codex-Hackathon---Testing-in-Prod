@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getCurrentUserRecords } from "../../../services/records/recordService";
+import {
+  getCurrentUserRecordFile,
+  getCurrentUserRecords,
+} from "../../../services/records/recordService";
 import { ALL_ILLNESS_OPTION } from "../constants";
 import {
   encodeRecordForShare,
@@ -18,6 +21,7 @@ export default function useRecordsView() {
   const [shareMessage, setShareMessage] = useState("");
   const [records, setRecords] = useState([]);
   const [selectedId, setSelectedId] = useState("");
+  const [selectedImageUrl, setSelectedImageUrl] = useState("");
 
   const illnessOptions = useMemo(
     () => [
@@ -69,6 +73,27 @@ export default function useRecordsView() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    if (!selectedId) {
+      setSelectedImageUrl("");
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    let objectUrl = "";
+    getCurrentUserRecordFile(selectedId, { signal: controller.signal })
+      .then((file) => {
+        objectUrl = URL.createObjectURL(file);
+        setSelectedImageUrl(objectUrl);
+      })
+      .catch(() => setSelectedImageUrl(""));
+
+    return () => {
+      controller.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedId]);
+
   const clearFilters = () => {
     setQuery("");
     setDateRange("all");
@@ -85,7 +110,10 @@ export default function useRecordsView() {
     setIsDetailOpen(true);
   };
 
-  const closeRecordDetail = () => setIsDetailOpen(false);
+  const closeRecordDetail = () => {
+    setIsDetailOpen(false);
+    setSelectedId("");
+  };
 
   const getShareUrl = (record, shouldPrint = false) => {
     const token = encodeRecordForShare(getShareableRecord(record));
@@ -131,6 +159,7 @@ export default function useRecordsView() {
     openRecordDetail,
     records,
     selectedRecord,
+    selectedImageUrl,
     setCustomDateRange,
     setDateRange,
     setIllness,

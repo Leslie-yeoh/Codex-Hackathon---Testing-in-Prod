@@ -28,6 +28,7 @@ client = AsyncIOMotorClient(MONGO_URI, serverSelectionTimeoutMS=10000)
 users_collection = client["codex"]["users"]
 
 import bcrypt
+from bson import ObjectId
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
@@ -141,14 +142,25 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user = await users_collection.find_one({"username": username}, {"_id": 0, "hashed_password": 0})
+    try:
+        user_object_id = ObjectId(user_id)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
+    user = await users_collection.find_one(
+        {"_id": user_object_id, "username": username}, {"_id": 0, "hashed_password": 0}
+    )
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user["user_id"] = user_id
+    user["user_id"] = user_object_id
     return user
 
 

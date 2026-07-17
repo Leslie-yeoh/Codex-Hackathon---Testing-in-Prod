@@ -37,10 +37,11 @@ const styles = {
   detailItem: "rounded-md border border-slate-200 bg-slate-50 p-3",
   detailLabel: "block text-sm font-medium text-slate-500",
   detailValue: "mt-1 block text-sm font-semibold text-slate-950",
+  originalImage: "mt-4 max-h-96 w-full rounded-lg border border-slate-200 object-contain",
   contextPanel:
     "mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4",
   contextTitle: "text-sm font-semibold text-slate-950",
-  contextBody: "mt-3 text-sm leading-7 text-slate-700",
+  contextBody: "mt-3 text-sm leading-7 text-slate-700 [&_h2]:mt-4 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-slate-300 [&_th]:bg-white [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_td]:border [&_td]:border-slate-300 [&_td]:px-2 [&_td]:py-1",
   contextEmpty: "mt-3 text-sm leading-6 text-slate-500",
   findingsTableWrap:
     "mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white",

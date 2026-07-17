@@ -10,10 +10,12 @@ from io import BytesIO
 from types import SimpleNamespace
 
 from dotenv import load_dotenv
+from bson import ObjectId
 from fastapi import UploadFile
 from starlette.datastructures import Headers
 
 from codex_backend.db.mongo_ocr import MongoDBClient
+from codex_backend.ai.prompts import USER_PROMPT_TEMPLATE
 from codex_backend.services import ocr
 
 
@@ -40,7 +42,7 @@ class FakeWorkflow:
         )
 
 
-async def upload(image: bytes, success: bool, mongo_client: MongoDBClient) -> str:
+async def upload(image: bytes, success: bool, mongo_client: MongoDBClient, user_id: ObjectId) -> str:
     ocr.workflow = FakeWorkflow(mongo_client, success)
     response = await ocr.process_upload(
         UploadFile(
@@ -48,14 +50,14 @@ async def upload(image: bytes, success: bool, mongo_client: MongoDBClient) -> st
             file=BytesIO(image),
             headers=Headers({"content-type": "image/png"}),
         ),
-        user_id="jwt-user-id",
+        user_id=user_id,
     )
     assert response.file_id
     assert response.success is success
     return response.file_id
 
 
-async def upload_pdf(mongo_client: MongoDBClient) -> str:
+async def upload_pdf(mongo_client: MongoDBClient, user_id: ObjectId) -> str:
     ocr.workflow = FakeWorkflow(mongo_client, True)
     original_renderer = ocr._render_pdf_first_page
     rendered_path = ""
@@ -75,7 +77,7 @@ async def upload_pdf(mongo_client: MongoDBClient) -> str:
                 file=BytesIO(b"%PDF-1.4"),
                 headers=Headers({"content-type": "application/pdf"}),
             ),
-            user_id="jwt-user-id",
+            user_id=user_id,
         )
         assert response.file_id
         return response.file_id
@@ -86,15 +88,22 @@ async def upload_pdf(mongo_client: MongoDBClient) -> str:
 
 def main() -> None:
     load_dotenv("codex_backend/.env")
+    assert "<ol>" in USER_PROMPT_TEMPLATE and "Markdown" in USER_PROMPT_TEMPLATE
+    fields = ocr.extract_structured_fields(
+        'Notes [{"patient_reference":"P-1","observations":"Amoxicillin","value":"500","unit":"mg"},{"patient_reference":"P-1","observations":"Paracetamol","value":"250","unit":"mg"}]'
+    )
+    assert fields == [{"patient_reference": "P-1", "observations": "Amoxicillin", "value": "500", "unit": "mg"}, {"patient_reference": "P-1", "observations": "Paracetamol", "value": "250", "unit": "mg"}]
+
     mongo_client = MongoDBClient()
     mongo_client.connect()
     file_ids = []
+    user_id = ObjectId()
 
     try:
-        success_id = asyncio.run(upload(b"successful-image", True, mongo_client))
+        success_id = asyncio.run(upload(b"successful-image", True, mongo_client, user_id))
         file_ids.append(success_id)
         pending = mongo_client.db.fs.files.find_one({"_id": __import__("bson").ObjectId(success_id)})
-        assert pending["metadata"]["user_id"] == "jwt-user-id"
+        assert pending["metadata"]["user_id"] == user_id
         assert pending["metadata"]["success"] is True
         assert pending["metadata"]["status"] == "pending_review"
 
@@ -105,7 +114,7 @@ def main() -> None:
                 findings=[ocr.Finding(observation="Heart rate", value="92", unit="beats/minute")],
                 context="<h2>Assessment</h2><p><strong>Stable</strong></p><ul><li>Follow up</li></ul>",
             ),
-            "jwt-user-id",
+            user_id,
         )
         assert confirmed.success
         metadata = mongo_client.db.fs.files.find_one({"_id": __import__("bson").ObjectId(success_id)})["metadata"]
@@ -113,14 +122,20 @@ def main() -> None:
         assert metadata["totalFindings"] == 1
         assert metadata["context"] == "## Assessment\n\n**Stable**\n\n- Follow up"
         assert metadata["success"] is True
+        records = mongo_client.list_confirmed_ocr_uploads(user_id)
+        assert [record["id"] for record in records] == [success_id]
+        assert records[0]["patientId"] == "Patient/MYKAD-950812-14-5567"
+        saved_file = mongo_client.get_confirmed_ocr_upload(success_id, user_id)
+        assert saved_file == (b"successful-image", "image/png")
+        assert mongo_client.get_confirmed_ocr_upload(success_id, "another-user") is None
 
-        failed_id = asyncio.run(upload(b"failed-image", False, mongo_client))
+        failed_id = asyncio.run(upload(b"failed-image", False, mongo_client, user_id))
         file_ids.append(failed_id)
         failed = mongo_client.db.fs.files.find_one({"_id": __import__("bson").ObjectId(failed_id)})
         assert failed["metadata"]["success"] is False
         assert failed["metadata"]["totalFindings"] == 0
 
-        pdf_id = asyncio.run(upload_pdf(mongo_client))
+        pdf_id = asyncio.run(upload_pdf(mongo_client, user_id))
         file_ids.append(pdf_id)
         pdf = mongo_client.db.fs.files.find_one({"_id": __import__("bson").ObjectId(pdf_id)})
         assert pdf["metadata"]["content_type"] == "application/pdf"

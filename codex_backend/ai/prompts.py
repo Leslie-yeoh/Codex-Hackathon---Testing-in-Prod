@@ -14,15 +14,24 @@ Guidelines:
 
 USER_PROMPT_TEMPLATE = """Analyze this handwritten medical image. Extract all text and convert to clear medical notes.
 
-Required output format:
-**Patient Information:** [if present]
-**Diagnosis/Assessment:** [clinical findings]
-**Medications:** [list each with: drug, dose, route, frequency, duration]
-**Instructions:** [patient counseling points]
-**Follow-up:** [return visits, labs, referrals]
-**Raw Transcription:** [verbatim text for reference]
+Return the document context as valid HTML only. Do not use Markdown, tables, or paragraphs.
+Use an ordered list for sections and nested unordered lists for each detail:
+<ol>
+  <li><strong>Patient Information</strong><ul><li>[if present]</li></ul></li>
+  <li><strong>Diagnosis/Assessment</strong><ul><li>[clinical finding]</li></ul></li>
+  <li><strong>Medications</strong><ul><li>[medicine, dose, route, frequency, duration]</li></ul></li>
+  <li><strong>Instructions</strong><ul><li>[patient counseling point]</li></ul></li>
+  <li><strong>Follow-up</strong><ul><li>[return visit, lab, or referral]</li></ul></li>
+  <li><strong>Raw Transcription</strong><ul><li>[verbatim text]</li></ul></li>
+</ol>
 
-Be thorough. Preserve exact dosages (mg, mL, units), frequencies (daily, BID, TID, QID, PRN), and durations."""
+Be thorough. Preserve exact dosages (mg, mL, units), frequencies (daily, BID, TID, QID, PRN), and durations.
+
+After the medical notes, include exactly one fenced JSON array and no other JSON. Include one object per finding, even when there is only one finding:
+```json
+[{"patient_reference":"","observations":"","value":"","unit":""}]
+```
+patient_reference may be the patient name, patient ID, or IC number. Repeat it in each object. observations is one medicine or finding and its related information. Use separate objects for separate findings. Use empty strings for information that is absent or unclear. Do not add keys or prose inside the JSON block."""
 
 MEDICAL_ABBREVIATIONS = {
     "qd": "daily",

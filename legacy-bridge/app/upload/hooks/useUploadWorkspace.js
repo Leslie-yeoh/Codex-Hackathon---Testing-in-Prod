@@ -43,10 +43,10 @@ export default function useUploadWorkspace() {
   const [confirmedRecords, setConfirmedRecords] = useState([]);
   const [hasConfirmedCurrentRecord, setHasConfirmedCurrentRecord] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
-  const [selectedFileType, setSelectedFileType] = useState("");
   const [latestRecord, setLatestRecord] = useState(null);
   const [gridfsFileId, setGridfsFileId] = useState("");
   const [originalImageUrl, setOriginalImageUrl] = useState("");
+  const [enhanceImage, setEnhanceImage] = useState(false);
   const fileInputRef = useRef(null);
   const originalImageUrlRef = useRef("");
 
@@ -92,12 +92,11 @@ export default function useUploadWorkspace() {
     setAlertMessage("");
     setHasConfirmedCurrentRecord(false);
     setSelectedFileName(file.name);
-    setSelectedFileType(file.type);
     setGridfsFileId("");
     setLatestRecord(null);
 
     try {
-      const extractedData = await extractDocument({ file });
+      const extractedData = await extractDocument({ file, enhance: enhanceImage });
       if (!extractedData.fileId) {
         throw new Error("OCR storage did not return a file ID.");
       }
@@ -107,7 +106,7 @@ export default function useUploadWorkspace() {
       setStage("review");
     } catch (error) {
       if (error.name !== "AbortError") {
-        setAlertMessage(error.message || "Unable to extract this document. Please try again.");
+        setAlertMessage("Unable to extract this document. Please try again.");
         clearOriginalImage();
         setStage("empty");
       }
@@ -121,14 +120,14 @@ export default function useUploadWorkspace() {
       return;
     }
 
-    if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
-      setAlertMessage("Please upload an image or PDF document.");
+    if (!file.type.startsWith("image/")) {
+      setAlertMessage("Please upload a PNG or JPG image.");
       event.target.value = "";
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setAlertMessage("The selected file is larger than the 10 MB limit.");
+      setAlertMessage("The selected file is larger than the 20 MB limit.");
       event.target.value = "";
       return;
     }
@@ -243,7 +242,6 @@ export default function useUploadWorkspace() {
     setIsConfirmedChecked(false);
     setAlertMessage("");
     setSelectedFileName("");
-    setSelectedFileType("");
     setGridfsFileId("");
     clearOriginalImage();
     setLatestRecord(null);
@@ -266,6 +264,7 @@ export default function useUploadWorkspace() {
     confirmedRecords,
     decision,
     editor,
+    enhanceImage,
     fileInputRef,
     form,
     handleConfirm,
@@ -277,7 +276,7 @@ export default function useUploadWorkspace() {
     removeFinding,
     resetUpload,
     selectedFileName,
-    selectedFileType,
+    setEnhanceImage,
     setIsConfirmedChecked,
     stage,
     updateField,

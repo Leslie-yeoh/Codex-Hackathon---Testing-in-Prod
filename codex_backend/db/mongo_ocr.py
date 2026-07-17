@@ -107,6 +107,46 @@ class MongoDBClient:
         )
         return result.modified_count == 1
 
+    def list_confirmed_ocr_uploads(self, user_id: str) -> list[dict[str, Any]]:
+        if not self.connected:
+            self.connect()
+
+        files = self.db.fs.files.find(
+            {"metadata.user_id": user_id, "metadata.status": "confirmed"}
+        ).sort("uploadDate", -1)
+        return [
+            {
+                "id": str(file["_id"]),
+                "patientId": file["metadata"].get("patientID", ""),
+                "findings": file["metadata"].get("findings", []),
+                "totalFindings": file["metadata"].get("totalFindings", 0),
+                "context": file["metadata"].get("context", ""),
+                "timeTaken": file["metadata"].get("timeTaken", 0),
+                "success": file["metadata"].get("success", False),
+                "confirmedAt": file["metadata"].get("confirmed_at", ""),
+                "confirmedAtISO": file["metadata"].get("confirmed_at"),
+                "originalFilename": file["metadata"].get("original_filename", ""),
+                "contentType": file["metadata"].get("content_type", ""),
+            }
+            for file in files
+        ]
+
+    def get_confirmed_ocr_upload(self, file_id: str, user_id: str):
+        if not self.connected:
+            self.connect()
+
+        try:
+            object_id = ObjectId(file_id)
+        except Exception as exc:
+            raise ValueError("Invalid GridFS file ID") from exc
+
+        grid_file = self.fs.find_one(
+            {"_id": object_id, "metadata.user_id": user_id, "metadata.status": "confirmed"}
+        )
+        if grid_file is None:
+            return None
+        return grid_file.read(), grid_file.metadata.get("content_type", "application/octet-stream")
+
     def save_extraction(self, image_bytes: bytes, original_path: str, content_type: str, result) -> str:
         if not self.connected:
             self.connect()

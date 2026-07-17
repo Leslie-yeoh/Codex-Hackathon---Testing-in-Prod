@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 from fastapi.responses import HTMLResponse
 
 from codex_backend.services.auth import get_current_user
@@ -20,6 +20,7 @@ from codex_backend.services.ocr import (
     confirm_ocr_upload,
     get_health,
     get_upload_form_html,
+    get_workflow,
     process_base64,
     process_image_path,
     process_upload,
@@ -30,11 +31,45 @@ from codex_backend.services.ocr import (
 router = APIRouter()
 
 
+def get_ocr_storage():
+    mongo_client = get_workflow().mongo_client
+    if mongo_client is None:
+        raise HTTPException(status_code=503, detail="GridFS storage is not configured")
+    return mongo_client
+
+
 @router.get("/health", response_model=HealthResponse)
 async def health_check() -> HealthResponse:
     """Return OCR service health."""
 
     return get_health()
+
+
+@router.get("/ocr/records")
+async def list_ocr_records(
+    current_user: dict[str, Any] = Depends(get_current_user),
+) -> list[dict[str, Any]]:
+    """List the current user's confirmed OCR records."""
+
+    return get_ocr_storage().list_confirmed_ocr_uploads(current_user["user_id"])
+
+
+@router.get("/ocr/records/{file_id}/file")
+async def get_ocr_record_file(
+    file_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
+) -> Response:
+    """Return one confirmed OCR file owned by the current user."""
+
+    try:
+        record_file = get_ocr_storage().get_confirmed_ocr_upload(file_id, current_user["user_id"])
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if record_file is None:
+        raise HTTPException(status_code=404, detail="OCR record not found")
+
+    content, content_type = record_file
+    return Response(content=content, media_type=content_type)
 
 
 @router.post("/ocr/handwriting", response_model=OCRResponse)

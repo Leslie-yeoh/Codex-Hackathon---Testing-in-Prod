@@ -35,6 +35,7 @@ export default function UploadWorkspace() {
     confirmedRecords,
     decision,
     editor,
+    enhanceImage,
     fileInputRef,
     form,
     handleConfirm,
@@ -47,6 +48,7 @@ export default function UploadWorkspace() {
     resetUpload,
     selectedFileName,
     selectedFileType,
+    setEnhanceImage,
     setIsConfirmedChecked,
     stage,
     updateField,
@@ -56,7 +58,8 @@ export default function UploadWorkspace() {
   return (
     <Container title="Extraction Workspace">
       {stage === "empty" && (
-        <div className={styles.dropzone}>
+        <>
+          <div className={styles.dropzone}>
           <p className={styles.dropzoneTitle}>Drop prescription document here</p>
           <p className={styles.dropzoneText}>
             Upload a source document to create editable prescription details for review.
@@ -80,7 +83,19 @@ export default function UploadWorkspace() {
             className={styles.fileInput}
             onChange={handleFileSelect}
           />
-        </div>
+          </div>
+          <label className={styles.enhanceOption}>
+            <input
+              type="checkbox"
+              checked={enhanceImage}
+              onChange={(event) => setEnhanceImage(event.target.checked)}
+            />
+            <span>
+              Enhance image
+              <span className={styles.enhanceWarning}>Warning: this slows processing.</span>
+            </span>
+          </label>
+        </>
       )}
 
       {stage === "processing" && (
@@ -213,46 +228,7 @@ export default function UploadWorkspace() {
             </div>
           )}
 
-          <div className={styles.actionBar}>
-            {alertMessage && (
-              <div
-                className={cn(
-                  styles.alertMessage,
-                  decision === "Confirmed"
-                    ? styles.alertSuccess
-                    : styles.alertWarning
-                )}
-                role="alert"
-              >
-                {alertMessage}
-              </div>
-            )}
-            <p className={styles.actionHint}>{actionHint}</p>
-            <label className={styles.confirmationRow}>
-              <input
-                type="checkbox"
-                className={globalStyles.checkbox}
-                checked={isConfirmedChecked}
-                onChange={(event) => setIsConfirmedChecked(event.target.checked)}
-              />
-              <span>I have reviewed the extracted context and clinical fields.</span>
-            </label>
-            <button
-              type="button"
-              className={cn(globalStyles.buttonBase, globalStyles.secondaryButton)}
-              onClick={resetUpload}
-            >
-              Start over
-            </button>
-            <button
-              type="button"
-              className={cn(globalStyles.buttonBase, globalStyles.successButton)}
-              disabled={isConfirmDisabled}
-              onClick={handleConfirm}
-            >
-              Confirm details
-            </button>
-          </div>
+
         </div>
       )}
 
@@ -481,6 +457,8 @@ const styles = {
   dropzoneTitle: "text-lg font-semibold text-slate-950",
   dropzoneText: "max-w-md text-sm leading-6 text-slate-600",
   fileInput: "hidden",
+  enhanceOption: "mt-3 inline-flex items-start gap-2 text-left text-sm font-medium text-slate-700",
+  enhanceWarning: "mt-1 block font-normal text-amber-700",
   fileName: "mb-3 text-sm font-medium text-slate-600",
   originalImage: "mb-4 max-h-96 w-full rounded-md border border-slate-200 bg-white object-contain",
   originalDocument: "mb-4 h-96 w-full rounded-md border border-slate-200 bg-white",
