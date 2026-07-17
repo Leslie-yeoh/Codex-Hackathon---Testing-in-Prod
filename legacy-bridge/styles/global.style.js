@@ -44,7 +44,7 @@ export const globalStyles = {
   warningInput: "border-amber-400 focus:border-amber-500 focus:ring-amber-100",
   searchInput: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-100 md:max-w-md",
 
-  buttonBase: "inline-flex min-h-11 items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+  buttonBase: "inline-flex min-h-11 items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 enabled:hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60",
   primaryButton: "bg-teal-700 text-white hover:bg-teal-800 focus:ring-teal-600",
   secondaryButton: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-400",
   dangerButton: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",

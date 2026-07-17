@@ -14,6 +14,7 @@ const USE_MOCK = ServiceConfigService.shouldDisplayMockActions();
 const registeredUsersKey = "legacyBridgeRegisteredUsers";
 const rememberedEmailKey = "legacyBridgeRememberedEmail";
 const currentUserKey = "legacyBridgeCurrentUser";
+const accessTokenKey = "legacyBridgeAccessToken";
 const frontendMockUsers = [
   {
     username: "Admin User",
@@ -117,12 +118,15 @@ class LoginService {
   static authenticateUser({ email, password }) {
     if (!ServiceConfigService.shouldDisplayMockActions()) {
       return apiClient("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }).then(async (token) => {
-        window.sessionStorage.setItem("legacyBridgeAccessToken", token.access_token);
+        window.sessionStorage.setItem(accessTokenKey, token.access_token);
         const user = await apiClient("/auth/me", { headers: { Authorization: `Bearer ${token.access_token}` } });
         const normalizedUser = normalizeUser(user);
         this.writeCurrentUser(normalizedUser);
         return { ok: true, user: normalizedUser };
-      }).catch((error) => ({ ok: false, message: error.message }));
+      }).catch((error) => {
+        this.signOutUser();
+        return { ok: false, message: error.message };
+      });
     }
     const apiPayload = NormalizationService.userToBackend({ email, password });
 
@@ -334,6 +338,7 @@ class LoginService {
 
   static signOutUser() {
     window.sessionStorage.removeItem(currentUserKey);
+    window.sessionStorage.removeItem(accessTokenKey);
   }
 
   static getRememberedEmail() {

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -12,13 +13,14 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorClient
-from passlib.context import CryptContext
 from pydantic import BaseModel, Field
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-JWT_SECRET = os.getenv("JWT_SECRET", "change-me")
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET must be set")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "30"))
 
@@ -57,6 +59,7 @@ class UserResponse(BaseModel):
 
     username: str
     email: str
+    role: str = "User"
 
 
 def hash_password(password: str) -> str:
@@ -101,9 +104,14 @@ async def signup_user(payload: SignupRequest) -> UserResponse:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username already exists")
 
     await users_collection.insert_one(
-        {"username": payload.username, "email": payload.email, "hashed_password": hash_password(payload.password)}
+        {
+            "username": payload.username,
+            "email": payload.email,
+            "role": "User",
+            "hashed_password": hash_password(payload.password),
+        }
     )
-    return UserResponse(username=payload.username, email=payload.email)
+    return UserResponse(username=payload.username, email=payload.email, role="User")
 
 
 async def login_user(payload: LoginRequest) -> TokenResponse:

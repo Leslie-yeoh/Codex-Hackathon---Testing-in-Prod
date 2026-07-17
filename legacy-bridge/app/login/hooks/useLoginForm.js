@@ -10,6 +10,7 @@ import {
 } from "../../../services/login/loginService";
 import { hasValidationErrors } from "../../../utils/globalValidator";
 import { showToast } from "../../../components/Toast/ToastProvider";
+import { USER_ROLES } from "../../../constants";
 import {
   getLoginInitialForm,
   loginInitialErrors,
@@ -73,7 +74,7 @@ export default function useLoginForm() {
     }
 
     showToast("Successfully signed in.", "success");
-    router.push(result.user.mustChangePassword ? "/change-password" : "/home");
+    router.push(result.user.role === USER_ROLES.ADMIN ? "/admin" : "/home");
   };
 
   return {

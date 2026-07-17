@@ -21,7 +21,7 @@ curl http://localhost:8000/health
 ```bash
 curl -X POST http://localhost:8000/auth/signup \
   -H "Content-Type: application/json" \
-  -d "{\"username\":\"demo\",\"password\":\"password123\",\"confirm_password\":\"password123\"}"
+  -d "{\"username\":\"demo\",\"email\":\"demo@example.com\",\"password\":\"password123\",\"confirm_password\":\"password123\"}"
 ```
 
 ### 3. Log In
@@ -29,7 +29,7 @@ curl -X POST http://localhost:8000/auth/signup \
 ```bash
 curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"username\":\"demo\",\"password\":\"password123\"}"
+  -d "{\"email\":\"demo@example.com\",\"password\":\"password123\"}"
 ```
 
 Response:
@@ -146,4 +146,9 @@ http://localhost:8000/upload
 - Set `enhance=false` to skip preprocessing and send the raw image.
 - `low_confidence_flag` is `true` when confidence < 0.8.
 - Add `custom_prompt` form field to override the default VLM instructions.
-- Auth uses MongoDB from `MONGO_URI` and signs JWTs with `JWT_SECRET`.
+- Auth uses MongoDB from `MONGO_URI` or `MONGODB_URI` and requires `JWT_SECRET`.
+
+
+## Auth Smoke Check
+
+With the API running, run `codex_backend/.venv/Scripts/python.exe codex_backend/test_auth_live.py`. It creates and removes its own test account.

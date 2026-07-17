@@ -9,11 +9,11 @@ export class ApiClient {
     }
 
     const response = await fetch(`${baseUrl}${endpoint}`, {
+      ...options,
       headers: {
         "Content-Type": "application/json",
         ...(options.headers || {}),
       },
-      ...options,
     });
 
     if (!response.ok) {
