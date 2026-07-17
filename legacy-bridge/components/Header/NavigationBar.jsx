@@ -8,6 +8,7 @@ import { useAuth } from "../../hooks/globalHooks";
 import { getNavigationItems } from "../../navigation/routes";
 import { globalStyles } from "../../styles/global.style";
 import ConfirmationModal from "../Modal/ConfirmationModal";
+import { showToastAfterReload } from "../Toast/ToastProvider";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -39,6 +40,7 @@ export default function NavigationBar() {
 
   const handleSignOut = () => {
     signOut();
+    showToastAfterReload("Successfully signed out.", "error");
     closeMenus();
     setIsSignOutModalOpen(false);
     window.location.reload();
@@ -307,3 +309,7 @@ const styles = {
   mobileSignInLink:
     "rounded-md border border-slate-300 bg-white px-3 py-2 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50",
 };
+
+
+
+

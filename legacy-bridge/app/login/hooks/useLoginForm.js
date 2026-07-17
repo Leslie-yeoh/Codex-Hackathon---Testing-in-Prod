@@ -9,6 +9,7 @@ import {
   saveRememberedEmail,
 } from "../../../services/login/loginService";
 import { hasValidationErrors } from "../../../utils/globalValidator";
+import { showToast } from "../../../components/Toast/ToastProvider";
 import {
   getLoginInitialForm,
   loginInitialErrors,
@@ -71,6 +72,7 @@ export default function useLoginForm() {
       clearRememberedEmail();
     }
 
+    showToast("Successfully signed in.", "success");
     router.push(result.user.mustChangePassword ? "/change-password" : "/home");
   };
 
@@ -83,4 +85,7 @@ export default function useLoginForm() {
     updateField,
   };
 }
+
+
+
 

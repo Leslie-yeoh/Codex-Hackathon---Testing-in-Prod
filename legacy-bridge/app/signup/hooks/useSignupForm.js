@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { registerUser } from "../../../services/login/loginService";
+import { showToast } from "../../../components/Toast/ToastProvider";
 import {
   signupInitialErrors,
   signupInitialForm,
@@ -44,6 +45,7 @@ export default function useSignupForm() {
       return;
     }
 
+    showToast("Successfully signed up. Please sign in with your credentials.", "success");
     router.push("/login?registered=true");
   };
 
@@ -55,4 +57,7 @@ export default function useSignupForm() {
     updateField,
   };
 }
+
+
+
 
