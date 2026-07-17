@@ -5,6 +5,7 @@ import { fetchAuditLogs } from "../../../services/auditLog/auditLogService";
 
 export default function useAuditLogs() {
   const [logs, setLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [type, setType] = useState("All");
 
@@ -17,7 +18,8 @@ export default function useAuditLogs() {
         if (error.name !== "AbortError") {
           setLogs([]);
         }
-      });
+      })
+      .finally(() => setIsLoading(false));
 
     return () => controller.abort();
   }, []);
@@ -36,6 +38,7 @@ export default function useAuditLogs() {
 
   return {
     filteredLogs,
+    isLoading,
     query,
     setQuery,
     setType,

@@ -18,9 +18,12 @@ const normalizeDashboardPayload = (payload) => {
 
 class DashboardService {
   static async fetchDashboardOverview({ signal } = {}) {
-    return normalizeDashboardPayload({
-      weeklyVolume: await apiClient("/dashboard/weekly-volume", { signal }),
-    });
+    const [weeklyVolume, moduleHealth] = await Promise.all([
+      apiClient("/dashboard/weekly-volume", { signal }),
+      apiClient("/dashboard/system-health", { signal }),
+    ]);
+
+    return normalizeDashboardPayload({ weeklyVolume, moduleHealth });
   }
 }
 

@@ -120,7 +120,7 @@ def main() -> None:
         metadata = mongo_client.db.fs.files.find_one({"_id": __import__("bson").ObjectId(success_id)})["metadata"]
         assert metadata["patientID"] == "Patient/MYKAD-950812-14-5567"
         assert metadata["totalFindings"] == 1
-        assert metadata["context"] == "## Assessment\n\n**Stable**\n\n- Follow up"
+        assert metadata["context"] == "<h2>Assessment</h2><p><strong>Stable</strong></p><ul><li>Follow up</li></ul>"
         assert metadata["success"] is True
         records = mongo_client.list_confirmed_ocr_uploads(user_id)
         assert [record["id"] for record in records] == [success_id]

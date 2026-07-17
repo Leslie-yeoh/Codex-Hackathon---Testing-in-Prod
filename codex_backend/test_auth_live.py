@@ -52,6 +52,11 @@ try:
     )
     assert current_user.status_code == 200, current_user.text
     assert current_user.json() == {"username": username, "email": email, "role": "User"}
+    assert httpx.get(
+        f"{base_url}/dashboard/system-health",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=10,
+    ).status_code == 403
     users.update_one({"email": email}, {"$set": {"role": "Admin"}})
     admin_login = httpx.post(
         f"{base_url}/auth/login",
@@ -72,6 +77,15 @@ try:
     )
     assert user_list.status_code == 200, user_list.text
     assert {"username": username, "email": email, "role": "Admin"} in user_list.json()
+    system_health = httpx.get(
+        f"{base_url}/dashboard/system-health",
+        headers={"Authorization": f"Bearer {admin_login.json()['access_token']}"},
+        timeout=10,
+    )
+    assert system_health.status_code == 200, system_health.text
+    assert {item["name"] for item in system_health.json()} == {
+        "Backend API", "MongoDB", "Gemini", "NVIDIA"
+    }
 
     assert httpx.post(
         f"{base_url}/auth/login",

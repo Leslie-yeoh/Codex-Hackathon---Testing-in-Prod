@@ -19,6 +19,7 @@ from codex_backend.services.ocr import (
     URLImageRequest,
     confirm_ocr_upload,
     get_health,
+    get_system_health,
     get_upload_form_html,
     get_workflow,
     process_base64,
@@ -51,6 +52,23 @@ async def get_weekly_ocr_volume(
 ) -> list[dict[str, Any]]:
     """Return OCR process counts from doctor_ocr.fs.files for the last seven days."""
     return get_ocr_storage().get_weekly_ocr_volume()
+
+@router.get("/dashboard/system-health")
+async def dashboard_system_health(
+    current_user: dict[str, Any] = Depends(get_current_user),
+) -> list[dict[str, str]]:
+    """Return live dependency health to administrators."""
+
+    if current_user.get("role") != "Admin":
+        raise HTTPException(status_code=403, detail="admin access required")
+    return await get_system_health()
+
+@router.get("/audit-logs")
+async def list_audit_logs(
+    _: dict[str, Any] = Depends(get_current_user),
+) -> list[dict[str, str]]:
+    """Return recent OCR audit events from MongoDB."""
+    return get_ocr_storage().list_audit_logs()
 
 @router.get("/ocr/records")
 async def list_ocr_records(
@@ -88,7 +106,13 @@ async def ocr_handwriting(
 ) -> OCRResponse:
     """Process one uploaded handwriting image."""
 
-    return await process_upload(file, current_user["user_id"], enhance, custom_prompt)
+    response = await process_upload(file, current_user["user_id"], enhance, custom_prompt)
+    get_ocr_storage().log_audit_event(
+        current_user["username"],
+        "AI_Extraction",
+        f"Processed {file.filename or 'upload'}.",
+    )
+    return response
 
 
 @router.post("/ocr/handwriting/batch", response_model=BatchOCRResponse)
@@ -110,7 +134,13 @@ async def confirm_ocr_handwriting(
 ) -> ConfirmOCRResponse:
     """Store reviewed OCR metadata for an uploaded image."""
 
-    return confirm_ocr_upload(file_id, payload, current_user["user_id"])
+    response = confirm_ocr_upload(file_id, payload, current_user["user_id"])
+    get_ocr_storage().log_audit_event(
+        current_user["username"],
+        "Final_Approval",
+        f"Confirmed OCR record {file_id}.",
+    )
+    return response
 @router.post("/ocr/handwriting/filepath", response_model=OCRResponse)
 async def ocr_handwriting_filepath(
     image_path: str = Form(..., description="Path to image file on server"),

@@ -99,6 +99,35 @@ class MongoDBClient:
             for day in counts
         ]
 
+    def log_audit_event(self, operator: str, event_type: str, description: str) -> str:
+        if not self.connected:
+            self.connect()
+
+        result = self.db.audit_logs.insert_one(
+            {
+                "operator": operator,
+                "type": event_type,
+                "description": description,
+                "created_at": datetime.now(timezone.utc),
+            }
+        )
+        return str(result.inserted_id)
+
+    def list_audit_logs(self, limit: int = 100) -> list[dict[str, str]]:
+        if not self.connected:
+            self.connect()
+
+        return [
+            {
+                "id": str(log["_id"]),
+                "time": log["created_at"].isoformat(),
+                "operator": log.get("operator", "System"),
+                "type": log.get("type", "Activity"),
+                "description": log.get("description", ""),
+            }
+            for log in self.db.audit_logs.find().sort("created_at", -1).limit(limit)
+        ]
+
     def finalize_ocr_upload(
         self,
         file_id: str,

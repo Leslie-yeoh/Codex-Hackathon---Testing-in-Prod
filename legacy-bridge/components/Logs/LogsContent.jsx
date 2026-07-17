@@ -9,7 +9,7 @@ import { globalStyles } from "../../styles/global.style";
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 export default function LogsContent() {
-  const { filteredLogs, query, setQuery, setType, type } = useAuditLogs();
+  const { filteredLogs, isLoading, query, setQuery, setType, type } = useAuditLogs();
 
   return (
     <Container title="Audit Timeline">
@@ -31,7 +31,9 @@ export default function LogsContent() {
         </select>
       </div>
 
-      {filteredLogs.length === 0 ? (
+      {isLoading ? (
+        <div className={styles.emptyState} role="status">Loading audit logs...</div>
+      ) : filteredLogs.length === 0 ? (
         <div className={styles.emptyState}>No audit logs match the current filters.</div>
       ) : (
       <div className={globalStyles.tableWrap}>

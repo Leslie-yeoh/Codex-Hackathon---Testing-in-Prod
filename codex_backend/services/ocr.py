@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 from html.parser import HTMLParser
@@ -391,7 +392,7 @@ def confirm_ocr_upload(file_id: str, payload: ConfirmOCRRequest, user_id: str) -
             user_id=user_id,
             patient_id=payload.patientID.strip(),
             findings=[finding.model_dump() for finding in payload.findings],
-            context_markdown=html_to_markdown(payload.context),
+            context_markdown=payload.context,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -406,6 +407,55 @@ def get_health() -> HealthResponse:
     wf = get_workflow()
     return HealthResponse(status="healthy", model=wf.gemini_model, api_configured=bool(wf.gemini_api_key and wf.api_key))
 
+
+async def get_system_health() -> list[dict[str, str]]:
+    """Check the dependencies shown on the admin dashboard."""
+
+    wf = get_workflow()
+
+    async def endpoint_health(name: str, url: str, **request_options) -> dict[str, str]:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(url, **request_options)
+            response.raise_for_status()
+            return {"name": name, "detail": "Endpoint reachable", "status": "Healthy"}
+        except httpx.HTTPError:
+            return {"name": name, "detail": "Endpoint unavailable", "status": "Unavailable"}
+
+    async def mongo_health() -> dict[str, str]:
+        try:
+            if not wf.mongo_client or not wf.mongo_client.client:
+                raise RuntimeError
+            await asyncio.to_thread(wf.mongo_client.client.admin.command, "ping")
+            return {"name": "MongoDB", "detail": "Database connected", "status": "Healthy"}
+        except Exception:
+            return {"name": "MongoDB", "detail": "Database unavailable", "status": "Unavailable"}
+
+    gemini = (
+        endpoint_health(
+            "Gemini",
+            f"https://generativelanguage.googleapis.com/v1beta/models/{wf.gemini_model}",
+            params={"key": wf.gemini_api_key},
+        )
+        if wf.gemini_api_key
+        else asyncio.sleep(0, result={"name": "Gemini", "detail": "API key not configured", "status": "Pending"})
+    )
+    nvidia = (
+        endpoint_health(
+            "NVIDIA",
+            "https://integrate.api.nvidia.com/v1/models",
+            headers={"Authorization": f"Bearer {wf.api_key}"},
+        )
+        if wf.api_key
+        else asyncio.sleep(0, result={"name": "NVIDIA", "detail": "API key not configured", "status": "Pending"})
+    )
+    mongodb, gemini_result, nvidia_result = await asyncio.gather(mongo_health(), gemini, nvidia)
+    return [
+        {"name": "Backend API", "detail": "Endpoint responding", "status": "Healthy"},
+        mongodb,
+        gemini_result,
+        nvidia_result,
+    ]
 
 def get_upload_form_html() -> str:
     """Return the simple upload test page."""
