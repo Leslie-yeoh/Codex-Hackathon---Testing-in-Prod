@@ -14,12 +14,18 @@ export const globalStyles = {
   navLink: "rounded-md px-3 py-2 transition hover:bg-slate-100 hover:text-slate-950",
   profileBadge: "rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700",
 
-  section: "rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6",
+  section: [
+    "rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6",
+    "transition-transform duration-300 hover:scale-[1.02]",
+  ].join(" "),
   sectionHeader: "flex flex-col gap-1 md:flex-row md:items-end md:justify-between",
   sectionTitle: "text-lg font-semibold text-slate-950 md:text-xl",
   sectionDescription: "text-sm leading-6 text-slate-600",
   statsGrid: "grid grid-cols-1 gap-3 sm:grid-cols-3 md:gap-4",
-  statCard: "rounded-lg border border-slate-200 bg-white p-4 shadow-sm",
+  statCard: [
+    "rounded-lg border border-slate-200 bg-white p-4 shadow-sm",
+    "transition-transform duration-300 hover:scale-[1.02]",
+  ].join(" "),
   statLabel: "text-sm font-medium text-slate-500",
   statValue: "mt-2 text-2xl font-semibold text-slate-950 md:text-3xl",
 

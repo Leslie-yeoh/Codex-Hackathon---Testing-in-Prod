@@ -50,6 +50,7 @@ export default function AboutContent() {
       </section>
 
       <Container
+        className="hover:!scale-100"
         title="How it works"
         description="The same workflow can be understood by non-technical users and technical teams: start with the source, organize the information, review it, then save it."
       >
@@ -89,7 +90,10 @@ const styles = {
   grid: "grid gap-4 md:grid-cols-2",
   paragraph: "mt-3 text-sm leading-6 text-slate-600 md:text-base",
   timeline: "mt-5 grid gap-3",
-  timelineItem: "flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700",
+  timelineItem: [
+    "flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700",
+    "transition-transform duration-300 hover:scale-[1.02]",
+  ].join(" "),
   timelineNumber: "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-700 text-xs font-bold text-white",
   cards: "grid gap-4 md:grid-cols-3",
 };

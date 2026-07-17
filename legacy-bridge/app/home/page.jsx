@@ -99,6 +99,7 @@ export default function HomePage() {
           {HOME_WORKFLOW_STEPS.map((step, index) => (
             <div key={step} className={styles.stepItem}>
               <div className={styles.stepMarkerWrap}>
+                <span className={styles.stepRipple} aria-hidden="true" />
                 <span className={styles.stepMarker} />
                 {index < HOME_WORKFLOW_STEPS.length - 1 && (
                   <span className={styles.stepConnector} aria-hidden="true" />
