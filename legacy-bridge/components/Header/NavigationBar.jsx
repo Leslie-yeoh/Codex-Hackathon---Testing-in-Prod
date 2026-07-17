@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../hooks/globalHooks";
 import { getNavigationItems } from "../../navigation/routes";
 import { globalStyles } from "../../styles/global.style";
@@ -22,14 +22,22 @@ const getInitials = (name) =>
 
 export default function NavigationBar() {
   const pathname = usePathname();
+  const [clientPathname, setClientPathname] = useState("");
+  const [isClient, setIsClient] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
   const { isSignedIn, signOut, user } = useAuth();
 
-  const navItems = getNavigationItems(user);
-  const displayName = user?.username || "User";
-  const displayRole = user?.role || "User";
+  useEffect(() => {
+    setIsClient(true);
+    setClientPathname(pathname || "");
+  }, [pathname]);
+
+  const sessionUser = isClient ? user : null;
+  const navItems = getNavigationItems(sessionUser);
+  const displayName = sessionUser?.username || "User";
+  const displayRole = sessionUser?.role || "User";
   const displayInitials = getInitials(displayName);
 
   const closeMenus = () => {
@@ -52,10 +60,10 @@ export default function NavigationBar() {
 
   const renderNavLink = (item, extraClassName = "") => {
     const isActive = item.exact
-      ? pathname === item.href
+      ? clientPathname === item.href
       : item.href === "/"
-        ? pathname === "/"
-        : pathname.startsWith(item.href);
+        ? clientPathname === "/"
+        : clientPathname.startsWith(item.href);
 
     return (
       <Link
@@ -144,7 +152,7 @@ export default function NavigationBar() {
             {navItems.map((item) => renderNavLink(item))}
           </nav>
 
-          {isSignedIn ? (
+          {isClient && isSignedIn ? (
             <div className={styles.profileWrap}>
               <button
                 type="button"
@@ -205,7 +213,7 @@ export default function NavigationBar() {
             {navItems.map((item) => renderNavLink(item, styles.mobileNavLink))}
           </nav>
 
-          {isSignedIn ? (
+          {isClient && isSignedIn ? (
             <div className={styles.mobileProfilePanel}>
               <div className={styles.mobileProfileHeader}>
                 <span className={styles.profileAvatar}>{displayInitials}</span>
