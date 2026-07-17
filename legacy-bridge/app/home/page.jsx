@@ -92,6 +92,7 @@ export default function HomePage() {
       </section>
 
       <Container
+        className="hover:!scale-100"
         title="How a record moves through Legacy Bridge"
         description="The product flow is written for daily use: upload the source, check what was extracted, correct missing information, confirm the record, then find it again when needed."
       >
