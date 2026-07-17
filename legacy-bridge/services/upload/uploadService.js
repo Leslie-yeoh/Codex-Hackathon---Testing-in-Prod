@@ -15,7 +15,6 @@ const waitForMock = (value, signal) =>
     }
 
     const timer = window.setTimeout(() => resolve(value), MOCK_DELAY);
-
     signal?.addEventListener(
       "abort",
       () => {
@@ -28,38 +27,55 @@ const waitForMock = (value, signal) =>
     );
   });
 
-const getPayloadData = (payload) => payload?.data ?? payload;
-
-const normalizeExtraction = (payload) => {
-  const data = getPayloadData(payload);
-
-  return {
-    patientId:
-      data?.patientId ?? data?.patient_identifier ?? extractedDefaults.patientId,
-    rawText: data?.rawText ?? data?.source_context ?? extractedDefaults.rawText,
-    findings:
-      data?.findings ?? data?.clinical_findings ?? extractedDefaults.findings,
-    confidence: data?.confidence ?? data?.review_note ?? extractedDefaults.confidence,
-  };
-};
+const normalizeExtraction = (data = {}) => ({
+  fileId: data.file_id ?? "",
+  patientId: "",
+  rawText: data.natural_language ?? data.raw_text ?? "",
+  findings: [],
+  confidence: data.low_confidence_flag
+    ? "Low confidence OCR result. Review before confirming."
+    : "Review the OCR result before confirming.",
+});
 
 class UploadService {
-  static async extractDocument({ fileName = "", signal } = {}) {
+  static async extractDocument({ file, signal } = {}) {
     if (USE_MOCK) {
-      return waitForMock(normalizeExtraction(extractedDefaults), signal);
+      return waitForMock({ ...extractedDefaults, fileId: "mock-upload" }, signal);
     }
 
-    return normalizeExtraction(
-      await apiClient("/api/uploads/extract", {
-        method: "POST",
-        body: JSON.stringify({ file_name: fileName }),
-        signal,
-      })
-    );
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient("/ocr/handwriting", {
+      method: "POST",
+      body: formData,
+      signal,
+    });
+    if (!response.success) {
+      throw new Error(response.metadata?.error || "OCR failed.");
+    }
+    return normalizeExtraction(response);
+  }
+
+  static async confirmExtraction({ fileId, patientId, findings, context, signal } = {}) {
+    if (USE_MOCK) {
+      return waitForMock({ file_id: fileId, success: true }, signal);
+    }
+
+    return apiClient("/ocr/handwriting/" + fileId + "/confirm", {
+      method: "POST",
+      body: JSON.stringify({
+        patientID: patientId,
+        findings,
+        context,
+      }),
+      signal,
+    });
   }
 }
 
 export const extractDocument = (options) =>
   UploadService.extractDocument(options);
+export const confirmExtraction = (options) =>
+  UploadService.confirmExtraction(options);
 
 export default UploadService;

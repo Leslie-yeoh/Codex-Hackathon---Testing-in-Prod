@@ -131,8 +131,10 @@ async def login_user(payload: LoginRequest) -> TokenResponse:
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any]:
     """Return the current user from a Bearer token."""
 
-    username = decode_access_token(token).get("sub")
-    if not username:
+    token_data = decode_access_token(token)
+    username = token_data.get("sub")
+    user_id = token_data.get("userID")
+    if not username or not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -146,6 +148,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    user["user_id"] = user_id
     return user
 
 

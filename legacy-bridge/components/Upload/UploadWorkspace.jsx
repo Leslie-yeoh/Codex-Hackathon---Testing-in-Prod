@@ -23,7 +23,6 @@ import useUploadWorkspace, {
   formatFindingValue,
 } from "../../app/upload/hooks/useUploadWorkspace";
 import Container from "../Container/Container";
-import { ALLOWED_FILE_TYPES } from "../../constants";
 import { globalStyles } from "../../styles/global.style";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
@@ -43,9 +42,11 @@ export default function UploadWorkspace() {
     isConfirmedChecked,
     isConfirmDisabled,
     latestRecord,
+    originalImageUrl,
     removeFinding,
     resetUpload,
     selectedFileName,
+    selectedFileType,
     setIsConfirmedChecked,
     stage,
     updateField,
@@ -56,7 +57,7 @@ export default function UploadWorkspace() {
     <Container title="Extraction Workspace">
       {stage === "empty" && (
         <div className={styles.dropzone}>
-          <p className={styles.dropzoneTitle}>Drop prescription image or PDF here</p>
+          <p className={styles.dropzoneTitle}>Drop prescription document here</p>
           <p className={styles.dropzoneText}>
             Upload a source document to create editable prescription details for review.
           </p>
@@ -70,12 +71,12 @@ export default function UploadWorkspace() {
             className={cn(globalStyles.buttonBase, globalStyles.primaryButton)}
             onClick={() => fileInputRef.current?.click()}
           >
-            Take photo / upload image
+            Take photo / upload document
           </button>
           <input
             ref={fileInputRef}
             type="file"
-            accept={ALLOWED_FILE_TYPES.join(",")}
+            accept="image/*,application/pdf"
             className={styles.fileInput}
             onChange={handleFileSelect}
           />
@@ -99,6 +100,20 @@ export default function UploadWorkspace() {
             {selectedFileName && (
               <p className={styles.fileName}>Source file: {selectedFileName}</p>
             )}
+            {originalImageUrl && (selectedFileType === "application/pdf" ? (
+              <object
+                data={originalImageUrl}
+                type="application/pdf"
+                aria-label={"Original upload: " + selectedFileName}
+                className={styles.originalDocument}
+              />
+            ) : (
+              <img
+                src={originalImageUrl}
+                alt={"Original upload: " + selectedFileName}
+                className={styles.originalImage}
+              />
+            ))}
             <EditorToolbar editor={editor} />
             <EditorContent
               className={cn(styles.richTextEditor, "tiptap-editor")}
@@ -467,6 +482,8 @@ const styles = {
   dropzoneText: "max-w-md text-sm leading-6 text-slate-600",
   fileInput: "hidden",
   fileName: "mb-3 text-sm font-medium text-slate-600",
+  originalImage: "mb-4 max-h-96 w-full rounded-md border border-slate-200 bg-white object-contain",
+  originalDocument: "mb-4 h-96 w-full rounded-md border border-slate-200 bg-white",
   processing: "mt-5 flex min-h-64 flex-col items-center justify-center gap-4 rounded-lg bg-slate-50 p-6 text-center",
   spinner: "h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-teal-700",
   workspaceGrid: "mt-5 grid gap-4 lg:grid-cols-2",

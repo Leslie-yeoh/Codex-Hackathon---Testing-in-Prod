@@ -8,10 +8,16 @@ export class ApiClient {
       throw new Error("API base URL is not configured.");
     }
 
-    const response = await fetch(`${baseUrl}${endpoint}`, {
+    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+    const token =
+      typeof window === "undefined"
+        ? ""
+        : window.sessionStorage.getItem("legacyBridgeAccessToken") || "";
+    const response = await fetch(baseUrl + endpoint, {
       ...options,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...(token ? { Authorization: "Bearer " + token } : {}),
         ...(options.headers || {}),
       },
     });
@@ -27,5 +33,3 @@ export class ApiClient {
 
 export const apiClient = (endpoint, options) =>
   ApiClient.request(endpoint, options);
-
-

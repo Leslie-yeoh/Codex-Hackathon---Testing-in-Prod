@@ -26,6 +26,11 @@ const principles = [
   },
 ];
 
+const nationalGoals = [
+  "Support Malaysia's 2030 goal for a nationwide electronic medical record.",
+  "Replace paper records with secure, seamless sharing across public and private healthcare.",
+  "Reduce patient waiting times by making reviewed records easier to find and use.",
+];
 export default function AboutContent() {
   return (
     <>
@@ -72,6 +77,16 @@ export default function AboutContent() {
         ))}
       </section>
 
+      <Container
+        title="A prototype for Malaysia's healthcare future"
+        description="Legacy Bridge is a prototype exploring how these goals could be achieved through practical record digitisation and review."
+      >
+        <ul className={styles.goals}>
+          {nationalGoals.map((goal) => (
+            <li key={goal} className={styles.goal}>{goal}</li>
+          ))}
+        </ul>
+      </Container>
       <Container title="Technical note">
         <p className={styles.paragraph}>
           For technical readers, Legacy Bridge is shaped as a frontend workflow for
@@ -96,4 +111,6 @@ const styles = {
   ].join(" "),
   timelineNumber: "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-700 text-xs font-bold text-white",
   cards: "grid gap-4 md:grid-cols-3",
+  goals: "mt-5 grid gap-3",
+  goal: "rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm leading-6 text-teal-950",
 };
