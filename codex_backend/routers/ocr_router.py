@@ -63,6 +63,15 @@ async def dashboard_system_health(
         raise HTTPException(status_code=403, detail="admin access required")
     return await get_system_health()
 
+@router.get("/dashboard/system-conditions")
+async def dashboard_system_conditions(
+    current_user: dict[str, Any] = Depends(get_current_user),
+) -> list[dict[str, str]]:
+    """Return OCR response-time and error-rate metrics for administrators."""
+    if current_user.get("role") != "Admin":
+        raise HTTPException(status_code=403, detail="admin access required")
+    return get_ocr_storage().get_ocr_system_conditions()
+
 @router.get("/audit-logs")
 async def list_audit_logs(
     _: dict[str, Any] = Depends(get_current_user),

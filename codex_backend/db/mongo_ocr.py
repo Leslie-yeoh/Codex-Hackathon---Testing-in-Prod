@@ -99,6 +99,54 @@ class MongoDBClient:
             for day in counts
         ]
 
+    def get_ocr_system_conditions(self) -> list[dict[str, str]]:
+        if not self.connected:
+            self.connect()
+
+        metrics = next(
+            self.db.fs.files.aggregate(
+                [
+                    {"$match": {"metadata.timeTaken": {"$exists": True}}},
+                    {
+                        "$group": {
+                            "_id": None,
+                            "count": {"$sum": 1},
+                            "average_time": {"$avg": "$metadata.timeTaken"},
+                            "errors": {
+                                "$sum": {
+                                    "$cond": [
+                                        {"$eq": ["$metadata.success", False]},
+                                        1,
+                                        0,
+                                    ]
+                                }
+                            },
+                        }
+                    },
+                ]
+            ),
+            None,
+        )
+        count = metrics["count"] if metrics else 0
+        average_time = metrics["average_time"] if metrics else 0
+        error_rate = (metrics["errors"] / count * 100) if count else 0
+        detail = "Across all OCR processes" if count else "No OCR processes recorded"
+
+        return [
+            {
+                "label": "Average Response Time",
+                "value": f"{round(average_time)} ms",
+                "detail": detail,
+                "status": "Healthy",
+            },
+            {
+                "label": "OCR Error Rate",
+                "value": f"{error_rate:.1f}%",
+                "detail": detail,
+                "status": "Healthy" if error_rate < 5 else "Attention",
+            },
+        ]
+
     def log_audit_event(self, operator: str, event_type: str, description: str) -> str:
         if not self.connected:
             self.connect()
