@@ -13,6 +13,7 @@ const initialOverview = {
 
 export default function useDashboardOverview() {
   const [overview, setOverview] = useState(initialOverview);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -23,10 +24,15 @@ export default function useDashboardOverview() {
         if (error.name !== "AbortError") {
           setOverview(initialOverview);
         }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
       });
 
     return () => controller.abort();
   }, []);
 
-  return overview;
+  return { ...overview, isLoading };
 }

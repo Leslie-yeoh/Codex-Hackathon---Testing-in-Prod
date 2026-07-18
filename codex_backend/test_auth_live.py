@@ -84,7 +84,7 @@ try:
     )
     assert system_health.status_code == 200, system_health.text
     assert {item["name"] for item in system_health.json()} == {
-        "Backend API", "MongoDB", "Gemini", "NVIDIA"
+        "Backend API", "MongoDB", "Mistral AI", "Gemini", "NVIDIA"
     }
 
     assert httpx.post(

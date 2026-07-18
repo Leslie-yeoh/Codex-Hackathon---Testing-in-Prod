@@ -60,16 +60,32 @@ export default function UploadWorkspace() {
   return (
     <Container title="Extraction Workspace">
       {stage === "empty" && (
-        <div className={styles.dropzone}>
-          <p className={styles.dropzoneTitle}>Drop prescription document here</p>
-          <p className={styles.dropzoneText}>
-            Upload a source document to create editable prescription details for review.
-          </p>
-          {alertMessage && (
-            <div className={cn(styles.alertMessage, styles.alertWarning)} role="alert">
-              {alertMessage}
-            </div>
-          )}
+        <>
+          <div className={styles.dropzone}>
+            <p className={styles.dropzoneTitle}>Drop prescription document here</p>
+            <p className={styles.dropzoneText}>
+              Upload a source document to create editable prescription details for review.
+            </p>
+            {alertMessage && (
+              <div className={cn(styles.alertMessage, styles.alertWarning)} role="alert">
+                {alertMessage}
+              </div>
+            )}
+            <button
+              type="button"
+              className={cn(globalStyles.buttonBase, globalStyles.primaryButton)}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Take photo / upload document
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,application/pdf"
+              className={styles.fileInput}
+              onChange={handleFileSelect}
+            />
+          </div>
           <label className={styles.enhanceOption}>
             <input
               type="checkbox"
@@ -81,23 +97,8 @@ export default function UploadWorkspace() {
               <span className={styles.enhanceWarning}>Warning: this slows processing.</span>
             </span>
           </label>
-          <button
-            type="button"
-            className={cn(globalStyles.buttonBase, globalStyles.primaryButton)}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Take photo / upload document
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,application/pdf"
-            className={styles.fileInput}
-            onChange={handleFileSelect}
-          />
-        </div>
+        </>
       )}
-
       {stage === "processing" && (
         <div className={styles.processing}>
           <div className={styles.spinner} />
@@ -498,7 +499,7 @@ const styles = {
   dropzoneTitle: "text-lg font-semibold text-slate-950",
   dropzoneText: "max-w-md text-sm leading-6 text-slate-600",
   fileInput: "hidden",
-  enhanceOption: "flex max-w-md items-start gap-2 text-center text-sm font-medium text-slate-700",
+  enhanceOption: "mt-3 flex max-w-md items-start gap-2 text-left text-sm font-medium text-slate-700",
   enhanceWarning: "mt-1 block font-normal text-amber-700",
   fileName: "mb-3 text-sm font-medium text-slate-600",
   originalImage: "mb-4 max-h-96 w-full rounded-md border border-slate-200 bg-white object-contain",

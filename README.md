@@ -7,7 +7,7 @@ A full-stack application for extracting handwritten medical notes. The Next.js i
 - Frontend: Next.js 16, React 19, Tailwind CSS
 - Backend: FastAPI, Python 3.13+
 - Storage and auth: MongoDB, GridFS, JWT
-- OCR: Gemini with NVIDIA NIM fallback
+- OCR: Mistral, then Gemini, with NVIDIA NIM fallback
 
 ## Repository layout
 
@@ -24,7 +24,7 @@ images/         Sample input images
 - MongoDB
 - `NVIDIA_NIM_API_KEY` for the OCR workflow
 
-`GEMINI_API_KEY` is optional; when set, Gemini is tried before the NVIDIA fallback.
+`MISTRAL_API_KEY` and `GEMINI_API_KEY` are optional. When configured, OCR tries Mistral first, then Gemini, then NVIDIA.
 
 ## Configure
 
@@ -33,6 +33,7 @@ Create `codex_backend/.env`:
 ```env
 MONGODB_URI=mongodb://localhost:27017
 JWT_SECRET=replace-with-a-long-random-secret
+MISTRAL_API_KEY=your-key-optional
 NVIDIA_NIM_API_KEY=your-key
 GEMINI_API_KEY=your-key-optional
 JWT_EXPIRE_MINUTES=30
@@ -44,6 +45,16 @@ Create `legacy-bridge/.env.local` from its `.env.example`:
 NEXT_PUBLIC_LEGACY_BRIDGE_API_BASE_URL=http://localhost:8000
 NEXT_PUBLIC_MOCK_DISPLAY_ACTIONS=false
 ```
+
+## OCR provider order
+
+Set `MISTRAL_API_KEY` to enable the first provider. The backend attempts:
+
+1. Mistral `mistral-small-latest` when configured
+2. Gemini when configured or after Mistral fails
+3. NVIDIA NIM as the required final fallback
+
+A failed provider automatically advances to the next one.
 
 ## Run locally
 
@@ -100,10 +111,10 @@ Protected endpoints require `Authorization: Bearer <token>`. Dashboard health an
 
 ## Checks
 
-Run the dashboard cache check:
+Run the local regression checks:
 
 ```powershell
-codex_backend\.venv\Scripts\python.exe -m unittest codex_backend.test_dashboard_cache
+codex_backend\.venv\Scripts\python.exe -m unittest codex_backend.test_dashboard_cache codex_backend.test_mistral_fallback
 ```
 
 With the API and MongoDB running, the auth smoke test creates and removes its own account:
@@ -113,3 +124,13 @@ codex_backend\.venv\Scripts\python.exe codex_backend\test_auth_live.py
 ```
 
 More request examples are in [codex_backend/api_usage.md](codex_backend/api_usage.md).
+
+## Docker
+
+Set `JWT_SECRET` and `NVIDIA_NIM_API_KEY` (optionally `MISTRAL_API_KEY` and `GEMINI_API_KEY`) in `codex_backend/.env`, then run:
+
+```powershell
+docker compose up --build
+```
+
+The frontend is available at http://localhost:3000 and the API at http://localhost:8000. The container reads `codex_backend/.env`, connects to the existing MongoDB specified by `MONGODB_URI`, and builds the frontend with mock actions disabled.

@@ -440,6 +440,16 @@ async def get_system_health() -> list[dict[str, str]]:
         if wf.gemini_api_key
         else asyncio.sleep(0, result={"name": "Gemini", "detail": "API key not configured", "status": "Pending"})
     )
+    mistral = (
+        endpoint_health(
+            "Mistral AI",
+            "https://api.mistral.ai/v1/models",
+            headers={"Authorization": f"Bearer {wf.mistral_api_key}"},
+        )
+        if wf.mistral_api_key
+        else asyncio.sleep(0, result={"name": "Mistral AI", "detail": "API key not configured", "status": "Pending"})
+    )
+
     nvidia = (
         endpoint_health(
             "NVIDIA",
@@ -449,10 +459,11 @@ async def get_system_health() -> list[dict[str, str]]:
         if wf.api_key
         else asyncio.sleep(0, result={"name": "NVIDIA", "detail": "API key not configured", "status": "Pending"})
     )
-    mongodb, gemini_result, nvidia_result = await asyncio.gather(mongo_health(), gemini, nvidia)
+    mongodb, mistral_result, gemini_result, nvidia_result = await asyncio.gather(mongo_health(), mistral, gemini, nvidia)
     return [
         {"name": "Backend API", "detail": "Endpoint responding", "status": "Healthy"},
         mongodb,
+        mistral_result,
         gemini_result,
         nvidia_result,
     ]

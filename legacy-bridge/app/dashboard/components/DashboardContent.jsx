@@ -9,11 +9,16 @@ const emptyWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function DashboardContent() {
   const {
+    isLoading,
     kpis,
     moduleHealth,
     systemConditions,
     weeklyVolume,
   } = useDashboardOverview();
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   const hasWeeklyVolume = weeklyVolume.length > 0;
   const chartVolume = hasWeeklyVolume
     ? weeklyVolume
@@ -32,7 +37,7 @@ export default function DashboardContent() {
       </section>
 
       <section className={styles.grid}>
-        <Container title="Weekly Processing Volume">
+        <Container title="Weekly Processing Volume" className="flex flex-col">
           <div className={styles.chart}>
             <div className={styles.yAxis} aria-hidden="true">
               <span>{maxWeeklyVolume}</span>
@@ -112,6 +117,38 @@ export default function DashboardContent() {
   );
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className={styles.contentStack} role="status" aria-busy="true">
+      <span className="sr-only">Loading dashboard data...</span>
+      <section className={globalStyles.statsGrid}>
+        {[0, 1, 2].map((index) => (
+          <div key={index} className="h-28 animate-pulse rounded-lg bg-slate-200" />
+        ))}
+      </section>
+      <section className={styles.grid}>
+        <Container title="Weekly Processing Volume" className="flex flex-col">
+          <div className="mt-5 h-96 animate-pulse rounded-lg bg-slate-200" />
+        </Container>
+        <Container title="System Health">
+          <div className="mt-5 grid gap-3">
+            {[0, 1, 2].map((index) => (
+              <div key={index} className="h-20 animate-pulse rounded-lg bg-slate-200" />
+            ))}
+          </div>
+        </Container>
+      </section>
+      <Container title="System Condition">
+        <div className="grid gap-3 md:grid-cols-3">
+          {[0, 1, 2].map((index) => (
+            <div key={index} className="h-36 animate-pulse rounded-lg bg-slate-200" />
+          ))}
+        </div>
+      </Container>
+    </div>
+  );
+}
+
 function StatCard({ label, value }) {
   return (
     <div className={globalStyles.statCard}>
@@ -124,11 +161,11 @@ function StatCard({ label, value }) {
 const styles = {
   contentStack: "grid gap-4 md:gap-5",
   grid: "grid gap-4 lg:grid-cols-[1.4fr_1fr]",
-  chart: "mt-5 flex h-64 gap-2",
-  yAxis: "flex h-44 flex-col justify-between text-xs font-medium text-slate-500",
+  chart: "mt-5 flex min-h-100 flex-1 items-center justify-center gap-2",
+  yAxis: "flex h-80 flex-col justify-between text-xs font-medium text-slate-500",
   chartContent: "min-w-0 flex-1",
   chartPlot:
-    "relative flex h-44 items-end gap-3 border-b border-l border-slate-300 px-3 pt-2",
+    "relative flex h-72 items-end gap-3 border-b border-l border-slate-300 px-3 pt-2",
   xAxis: "flex gap-3 pl-3 pt-2",
   barItem: "flex h-full flex-1 flex-col items-center justify-end",
   barTrack: "flex h-full w-full items-end",

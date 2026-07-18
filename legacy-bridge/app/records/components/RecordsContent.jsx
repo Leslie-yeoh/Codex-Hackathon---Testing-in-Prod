@@ -1,6 +1,7 @@
 "use client";
 
 import { Download, Share2, SlidersHorizontal } from "lucide-react";
+import { createPortal } from "react-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import BottomSheet from "../../../components/BottomSheet/BottomSheet";
@@ -164,7 +165,7 @@ function RecordDetailModal({
   record,
   shareMessage,
 }) {
-  return (
+  return createPortal(
     <div className={styles.modalOverlay} role="presentation">
       <button
         type="button"
@@ -237,7 +238,8 @@ function RecordDetailModal({
         <RecordContext context={record.context} />
         <FindingsTable findings={getRecordFindings(record)} />
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }
 
