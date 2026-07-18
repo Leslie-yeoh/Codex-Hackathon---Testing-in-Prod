@@ -113,3 +113,13 @@ codex_backend\.venv\Scripts\python.exe codex_backend\test_auth_live.py
 ```
 
 More request examples are in [codex_backend/api_usage.md](codex_backend/api_usage.md).
+
+## Docker
+
+Set `JWT_SECRET` and `NVIDIA_NIM_API_KEY` (optionally `GEMINI_API_KEY`) in `codex_backend/.env`, then run:
+
+```powershell
+docker compose up --build
+```
+
+The frontend is available at http://localhost:3000 and the API at http://localhost:8000. Docker connects to the existing MongoDB specified by `MONGODB_URI`; it does not create a separate database.
