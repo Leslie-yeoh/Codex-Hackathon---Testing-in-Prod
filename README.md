@@ -46,6 +46,16 @@ NEXT_PUBLIC_LEGACY_BRIDGE_API_BASE_URL=http://localhost:8000
 NEXT_PUBLIC_MOCK_DISPLAY_ACTIONS=false
 ```
 
+## OCR provider order
+
+Set `MISTRAL_API_KEY` to enable the first provider. The backend attempts:
+
+1. Mistral `mistral-small-latest` when configured
+2. Gemini when configured or after Mistral fails
+3. NVIDIA NIM as the required final fallback
+
+A failed provider automatically advances to the next one.
+
 ## Run locally
 
 Start the API from the repository root:
@@ -101,10 +111,10 @@ Protected endpoints require `Authorization: Bearer <token>`. Dashboard health an
 
 ## Checks
 
-Run the dashboard cache check:
+Run the local regression checks:
 
 ```powershell
-codex_backend\.venv\Scripts\python.exe -m unittest codex_backend.test_dashboard_cache
+codex_backend\.venv\Scripts\python.exe -m unittest codex_backend.test_dashboard_cache codex_backend.test_mistral_fallback
 ```
 
 With the API and MongoDB running, the auth smoke test creates and removes its own account:
@@ -123,4 +133,4 @@ Set `JWT_SECRET` and `NVIDIA_NIM_API_KEY` (optionally `MISTRAL_API_KEY` and `GEM
 docker compose up --build
 ```
 
-The frontend is available at http://localhost:3000 and the API at http://localhost:8000. Docker connects to the existing MongoDB specified by `MONGODB_URI`; it does not create a separate database.
+The frontend is available at http://localhost:3000 and the API at http://localhost:8000. The container reads `codex_backend/.env`, connects to the existing MongoDB specified by `MONGODB_URI`, and builds the frontend with mock actions disabled.
