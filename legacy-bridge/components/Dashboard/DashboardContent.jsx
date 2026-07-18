@@ -37,7 +37,7 @@ export default function DashboardContent() {
       </section>
 
       <section className={styles.grid}>
-        <Container title="Weekly Processing Volume">
+        <Container title="Weekly Processing Volume" className="flex flex-col">
           <div className={styles.chart}>
             <div className={styles.yAxis} aria-hidden="true">
               <span>{maxWeeklyVolume}</span>
@@ -127,7 +127,7 @@ function DashboardSkeleton() {
         ))}
       </section>
       <section className={styles.grid}>
-        <Container title="Weekly Processing Volume">
+        <Container title="Weekly Processing Volume" className="flex flex-col">
           <div className="mt-5 h-64 animate-pulse rounded-lg bg-slate-200" />
         </Container>
         <Container title="System Health">
@@ -161,7 +161,7 @@ function StatCard({ label, value }) {
 const styles = {
   contentStack: "grid gap-4 md:gap-5",
   grid: "grid gap-4 lg:grid-cols-[1.4fr_1fr]",
-  chart: "mt-5 flex h-64 gap-2",
+  chart: "mt-5 flex min-h-64 flex-1 items-center justify-center gap-2",
   yAxis: "flex h-44 flex-col justify-between text-xs font-medium text-slate-500",
   chartContent: "min-w-0 flex-1",
   chartPlot:
