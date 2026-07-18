@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   createUserByAdmin,
   getUsers,
@@ -13,7 +13,7 @@ const REQUIRED_FIELDS_MESSAGE =
   "Complete username, email, and temporary password before adding user.";
 
 export default function useAdminUsers() {
-  const [users, setUsers] = useState(getUsers);
+  const [users, setUsers] = useState([]);
   const [query, setQuery] = useState("");
   const [form, setForm] = useState(ADD_USER_INITIAL_FORM);
   const [alertMessage, setAlertMessage] = useState("");
@@ -34,9 +34,17 @@ export default function useAdminUsers() {
     );
   }, [query, users]);
 
-  const refreshUsers = () => {
-    setUsers(getUsers());
+  const refreshUsers = async () => {
+    try {
+      setUsers(await getUsers());
+    } catch {
+      setUsers([]);
+    }
   };
+
+  useEffect(() => {
+    getUsers().then(setUsers).catch(() => setUsers([]));
+  }, []);
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));

@@ -70,7 +70,6 @@ class DoctorHandwritingWorkflow:
         self.custom_prompt = custom_prompt
         self.mongo_client = mongo_client
 
-        Path(self.preprocess_dir).mkdir(parents=True, exist_ok=True)
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
 
     def _get_image_files(self, input_path: str) -> List[str]:

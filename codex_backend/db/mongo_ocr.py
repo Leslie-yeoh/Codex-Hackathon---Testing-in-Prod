@@ -1,24 +1,27 @@
 import hashlib
-from datetime import datetime
-from typing import Optional, Dict, Any
-from dataclasses import asdict
-
-from pymongo import MongoClient
-from gridfs import GridFS, GridFSBucket
 import os
-from dotenv import load_dotenv
+from dataclasses import asdict
+from datetime import datetime, time, timedelta, timezone
+from typing import Any, Dict, Optional
+from uuid import uuid4
 
-load_dotenv()  # Load environment variables from .env file
+from bson import ObjectId
+from dotenv import load_dotenv
+from gridfs import GridFS, GridFSBucket
+from pymongo import MongoClient
+
+load_dotenv()
 
 
 class MongoDBClient:
     def __init__(self, uri: Optional[str] = None, database: str = "doctor_ocr"):
         self.uri = uri or os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-        self.database_name = os.getenv("GRIDFS_DATABASE_NAME", database)
+        self.database_name = database
         self.client: Optional[MongoClient] = None
         self.db = None
         self.fs: Optional[GridFS] = None
         self.bucket: Optional[GridFSBucket] = None
+        self._dashboard_cache: dict[str, list[dict[str, Any]]] = {}
 
     def connect(self):
         if self.client is not None:
@@ -40,79 +43,277 @@ class MongoDBClient:
     def connected(self) -> bool:
         return self.client is not None
 
-    def _compute_hash(self, image_bytes: bytes) -> str:
+    @staticmethod
+    def _compute_hash(image_bytes: bytes) -> str:
         return hashlib.sha256(image_bytes).hexdigest()
 
     def _find_by_hash(self, image_hash: str):
         return self.fs.find_one({"filename": image_hash})
 
-    def save_extraction(
+    def save_ocr_upload(self, image_bytes: bytes, original_filename: str, content_type: str, user_id: str, result) -> str:
+        if not self.connected:
+            self.connect()
+
+        image_hash = self._compute_hash(image_bytes)
+        metadata = {
+            "user_id": user_id,
+            "patientID": "",
+            "findings": [],
+            "totalFindings": 0,
+            "context": "",
+            "timeTaken": round(result.processing_time_ms, 1),
+            "success": result.success,
+            "status": "pending_review" if result.success else "failed",
+            "original_filename": original_filename,
+            "image_hash": image_hash,
+            "content_type": content_type,
+            "processed_at": datetime.now().isoformat(),
+        }
+        file_id = self.bucket.upload_from_stream(
+            filename=f"{image_hash}-{uuid4().hex}",
+            source=image_bytes,
+            metadata=metadata,
+        )
+        self._dashboard_cache.clear()
+        return str(file_id)
+
+    def get_weekly_ocr_volume(self) -> list[dict[str, Any]]:
+        """Count OCR uploads for today and the preceding six UTC days."""
+        cache_key = "dashboard:weekly-ocr-volume"
+        if cache_key in self._dashboard_cache:
+            return self._dashboard_cache[cache_key]
+
+        if not self.connected:
+            self.connect()
+
+        today = datetime.now(timezone.utc).date()
+        start_date = today - timedelta(days=6)
+        start = datetime.combine(start_date, time.min)
+        end = start + timedelta(days=7)
+        counts = {start_date + timedelta(days=offset): 0 for offset in range(7)}
+
+        for file in self.db.fs.files.find(
+            {
+                "uploadDate": {"$gte": start, "$lt": end},
+            },
+            {"uploadDate": 1},
+        ):
+            counts[file["uploadDate"].date()] += 1
+
+        result = [
+            {"day": day.strftime("%a"), "records": counts[day]}
+            for day in counts
+        ]
+        self._dashboard_cache[cache_key] = result
+        return result
+
+    def get_ocr_system_conditions(self) -> list[dict[str, str]]:
+        cache_key = "dashboard:ocr-system-conditions"
+        if cache_key in self._dashboard_cache:
+            return self._dashboard_cache[cache_key]
+
+        if not self.connected:
+            self.connect()
+
+        metrics = next(
+            self.db.fs.files.aggregate(
+                [
+                    {"$match": {"metadata.timeTaken": {"$exists": True}}},
+                    {
+                        "$group": {
+                            "_id": None,
+                            "count": {"$sum": 1},
+                            "average_time": {"$avg": "$metadata.timeTaken"},
+                            "errors": {
+                                "$sum": {
+                                    "$cond": [
+                                        {"$eq": ["$metadata.success", False]},
+                                        1,
+                                        0,
+                                    ]
+                                }
+                            },
+                        }
+                    },
+                ]
+            ),
+            None,
+        )
+        count = metrics["count"] if metrics else 0
+        average_time = metrics["average_time"] if metrics else 0
+        error_rate = (metrics["errors"] / count * 100) if count else 0
+        detail = "Across all OCR processes" if count else "No OCR processes recorded"
+
+        result = [
+            {
+                "label": "Average Response Time",
+                "value": f"{round(average_time)} ms",
+                "detail": detail,
+                "status": "Healthy",
+            },
+            {
+                "label": "OCR Error Rate",
+                "value": f"{error_rate:.1f}%",
+                "detail": detail,
+                "status": "Healthy" if error_rate < 5 else "Attention",
+            },
+        ]
+        self._dashboard_cache[cache_key] = result
+        return result
+
+    def log_audit_event(self, operator: str, event_type: str, description: str) -> str:
+        if not self.connected:
+            self.connect()
+
+        result = self.db.audit_logs.insert_one(
+            {
+                "operator": operator,
+                "type": event_type,
+                "description": description,
+                "created_at": datetime.now(timezone.utc),
+            }
+        )
+        return str(result.inserted_id)
+
+    def list_audit_logs(self, limit: int = 100) -> list[dict[str, str]]:
+        if not self.connected:
+            self.connect()
+
+        return [
+            {
+                "id": str(log["_id"]),
+                "time": log["created_at"].isoformat(),
+                "operator": log.get("operator", "System"),
+                "type": log.get("type", "Activity"),
+                "description": log.get("description", ""),
+            }
+            for log in self.db.audit_logs.find().sort("created_at", -1).limit(limit)
+        ]
+
+    def finalize_ocr_upload(
         self,
-        image_bytes: bytes,
-        original_path: str,
-        content_type: str,
-        result,
-    ) -> str:
+        file_id: str,
+        user_id: str,
+        patient_id: str,
+        findings: list[dict[str, str]],
+        context_markdown: str,
+    ) -> bool:
+        if not self.connected:
+            self.connect()
+
+        try:
+            object_id = ObjectId(file_id)
+        except Exception as exc:
+            raise ValueError("Invalid GridFS file ID") from exc
+
+        result = self.db.fs.files.update_one(
+            {"_id": object_id, "metadata.user_id": user_id, "metadata.status": "pending_review"},
+            {
+                "$set": {
+                    "metadata.patientID": patient_id,
+                    "metadata.findings": findings,
+                    "metadata.totalFindings": len(findings),
+                    "metadata.context": context_markdown,
+                    "metadata.success": True,
+                    "metadata.status": "confirmed",
+                    "metadata.confirmed_at": datetime.now().isoformat(),
+                }
+            },
+        )
+        if result.modified_count:
+            self._dashboard_cache.clear()
+        return result.modified_count == 1
+
+    def list_confirmed_ocr_uploads(self, user_id: str) -> list[dict[str, Any]]:
+        if not self.connected:
+            self.connect()
+
+        files = self.db.fs.files.find(
+            {"metadata.user_id": user_id, "metadata.status": "confirmed"}
+        ).sort("uploadDate", -1)
+        return [
+            {
+                "id": str(file["_id"]),
+                "patientId": file["metadata"].get("patientID", ""),
+                "findings": file["metadata"].get("findings", []),
+                "totalFindings": file["metadata"].get("totalFindings", 0),
+                "context": file["metadata"].get("context", ""),
+                "timeTaken": file["metadata"].get("timeTaken", 0),
+                "success": file["metadata"].get("success", False),
+                "confirmedAt": file["metadata"].get("confirmed_at", ""),
+                "confirmedAtISO": file["metadata"].get("confirmed_at"),
+                "originalFilename": file["metadata"].get("original_filename", ""),
+                "contentType": file["metadata"].get("content_type", ""),
+            }
+            for file in files
+        ]
+
+    def get_confirmed_ocr_upload(self, file_id: str, user_id: str):
+        if not self.connected:
+            self.connect()
+
+        try:
+            object_id = ObjectId(file_id)
+        except Exception as exc:
+            raise ValueError("Invalid GridFS file ID") from exc
+
+        grid_file = self.fs.find_one(
+            {"_id": object_id, "metadata.user_id": user_id, "metadata.status": "confirmed"}
+        )
+        if grid_file is None:
+            return None
+        return grid_file.read(), grid_file.metadata.get("content_type", "application/octet-stream")
+
+    def save_extraction(self, image_bytes: bytes, original_path: str, content_type: str, result) -> str:
         if not self.connected:
             self.connect()
 
         image_hash = self._compute_hash(image_bytes)
         result_dict = asdict(result)
-
         existing = self._find_by_hash(image_hash)
-        action = "replaced" if existing else "inserted"
-
         if existing:
             self.bucket.delete(existing._id)
-
-        metadata = {
-            "original_filename": os.path.basename(original_path),
-            "image_hash": image_hash,
-            "processed_at": datetime.now().isoformat(),
-            "content_type": content_type,
-            "action": action,
-            "extraction": result_dict,
-        }
 
         file_id = self.bucket.upload_from_stream(
             filename=image_hash,
             source=image_bytes,
-            metadata=metadata,
+            metadata={
+                "original_filename": os.path.basename(original_path),
+                "image_hash": image_hash,
+                "processed_at": datetime.now().isoformat(),
+                "content_type": content_type,
+                "extraction": result_dict,
+            },
         )
-
-        print(f"MongoDB: {action} extraction (hash={image_hash[:12]}..., id={file_id})")
+        self._dashboard_cache.clear()
         return str(file_id)
 
     def get_extraction(self, image_hash: str) -> Optional[Dict[str, Any]]:
         if not self.connected:
             self.connect()
-        grid_file = self.fs.find_one({"filename": image_hash})
+        grid_file = self._find_by_hash(image_hash)
         if grid_file is None:
             return None
-        return {
-            "file_id": str(grid_file._id),
-            "metadata": grid_file.metadata,
-            "upload_date": grid_file.upload_date,
-        }
+        return {"file_id": str(grid_file._id), "metadata": grid_file.metadata, "upload_date": grid_file.upload_date}
 
     def list_extractions(self, limit: int = 20, skip: int = 0) -> list:
         if not self.connected:
             self.connect()
         files = self.fs.find().sort("uploadDate", -1).skip(skip).limit(limit)
-        results = []
-        for f in files:
-            results.append({
-                "file_id": str(f._id),
-                "image_hash": f.filename,
-                "metadata": f.metadata,
-                "upload_date": f.upload_date,
-            })
-        return results
+        return [
+            {
+                "file_id": str(file._id),
+                "image_hash": file.filename,
+                "metadata": file.metadata,
+                "upload_date": file.upload_date,
+            }
+            for file in files
+        ]
 
     def delete_extraction(self, image_hash: str) -> bool:
         if not self.connected:
             self.connect()
-        grid_file = self.fs.find_one({"filename": image_hash})
+        grid_file = self._find_by_hash(image_hash)
         if grid_file is None:
             return False
         self.bucket.delete(grid_file._id)

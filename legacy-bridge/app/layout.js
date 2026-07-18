@@ -1,6 +1,7 @@
 import "./globals.css";
 import UniversalFooter from "../components/Footer/UniversalFooter";
 import ThemeProvider from "../components/Theme/ThemeProvider";
+import ToastProvider from "../components/Toast/ToastProvider";
 
 export const metadata = {
   title: "Legacy Bridge",
@@ -31,10 +32,17 @@ export default function RootLayout({ children }) {
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className="min-h-full">
         <ThemeProvider>
-          {children}
-          <UniversalFooter />
+          <ToastProvider>
+            {children}
+            <UniversalFooter />
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
+
+
+
+
+

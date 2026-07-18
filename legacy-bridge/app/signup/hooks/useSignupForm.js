@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { registerUser } from "../../../services/login/loginService";
+import { showToast } from "../../../components/Toast/ToastProvider";
 import {
   signupInitialErrors,
   signupInitialForm,
@@ -24,7 +25,7 @@ export default function useSignupForm() {
     setAlertMessage("");
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const { nextForm, nextErrors, isValid } = validateSignupForm(form);
@@ -37,13 +38,14 @@ export default function useSignupForm() {
       return;
     }
 
-    const result = registerUser(nextForm);
+    const result = await registerUser(nextForm);
 
     if (!result.ok) {
       setAlertMessage(result.message);
       return;
     }
 
+    showToast("Successfully signed up. Please sign in with your credentials.", "success");
     router.push("/login?registered=true");
   };
 
@@ -55,3 +57,7 @@ export default function useSignupForm() {
     updateField,
   };
 }
+
+
+
+

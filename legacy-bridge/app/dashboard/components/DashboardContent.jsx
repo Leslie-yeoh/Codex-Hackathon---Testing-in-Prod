@@ -5,6 +5,7 @@ import { globalStyles } from "../../../styles/global.style";
 import useDashboardOverview from "../hooks/useDashboardOverview";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
+const emptyWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function DashboardContent() {
   const {
@@ -13,8 +14,12 @@ export default function DashboardContent() {
     systemConditions,
     weeklyVolume,
   } = useDashboardOverview();
+  const hasWeeklyVolume = weeklyVolume.length > 0;
+  const chartVolume = hasWeeklyVolume
+    ? weeklyVolume
+    : emptyWeek.map((day) => ({ day, records: 0 }));
   const maxWeeklyVolume = Math.max(
-    ...weeklyVolume.map((item) => item.records),
+    ...chartVolume.map((item) => item.records),
     1
   );
 
@@ -29,23 +34,37 @@ export default function DashboardContent() {
       <section className={styles.grid}>
         <Container title="Weekly Processing Volume">
           <div className={styles.chart}>
-            {weeklyVolume.map((item) => (
-              <div key={item.day} className={styles.barItem}>
-                <div className={styles.barTrack}>
-                  <div
-                    className={styles.barFill}
-                    style={{
-                      height: `${Math.max(
-                        (item.records / maxWeeklyVolume) * 100,
-                        8
-                      )}%`,
-                    }}
-                  />
-                </div>
-                <span className={styles.barValue}>{item.records}</span>
-                <span className={styles.barLabel}>{item.day}</span>
+            <div className={styles.yAxis} aria-hidden="true">
+              <span>{maxWeeklyVolume}</span>
+              <span>0</span>
+            </div>
+            <div className={styles.chartContent}>
+              <div className={styles.chartPlot}>
+                {chartVolume.map((item, index) => (
+                  <div key={`${item.day}-${index}`} className={styles.barItem}>
+                    <span className={styles.barValue}>{item.records}</span>
+                    <div className={styles.barTrack}>
+                      <div
+                        className={styles.barFill}
+                        style={{
+                          height: `${(item.records / maxWeeklyVolume) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {!hasWeeklyVolume && (
+                  <p className={styles.emptyChart}>No OCR processing data yet</p>
+                )}
               </div>
-            ))}
+              <div className={styles.xAxis}>
+                {chartVolume.map((item, index) => (
+                  <span key={`${item.day}-${index}`} className={styles.barLabel}>
+                    {item.day}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </Container>
 
@@ -105,13 +124,19 @@ function StatCard({ label, value }) {
 const styles = {
   contentStack: "grid gap-4 md:gap-5",
   grid: "grid gap-4 lg:grid-cols-[1.4fr_1fr]",
-  chart: "mt-5 flex h-64 items-end gap-3",
-  barItem: "flex flex-1 flex-col items-center gap-2",
-  barTrack:
-    "flex h-44 w-full items-end rounded-md bg-slate-100 px-2 py-2 sm:px-3",
-  barFill: "w-full rounded-md bg-teal-700 transition-all",
-  barValue: "text-sm font-semibold text-slate-950",
-  barLabel: "text-xs font-medium text-slate-500",
+  chart: "mt-5 flex h-64 gap-2",
+  yAxis: "flex h-44 flex-col justify-between text-xs font-medium text-slate-500",
+  chartContent: "min-w-0 flex-1",
+  chartPlot:
+    "relative flex h-44 items-end gap-3 border-b border-l border-slate-300 px-3 pt-2",
+  xAxis: "flex gap-3 pl-3 pt-2",
+  barItem: "flex h-full flex-1 flex-col items-center justify-end",
+  barTrack: "flex h-full w-full items-end",
+  barFill: "w-full rounded-t-md bg-teal-700 transition-all",
+  barValue: "mb-1 text-sm font-semibold text-slate-950",
+  barLabel: "flex-1 text-center text-xs font-medium text-slate-500",
+  emptyChart:
+    "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded bg-white/90 px-2 py-1 text-sm text-slate-500",
   healthList: "mt-5 grid gap-3",
   healthItem:
     "flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4",

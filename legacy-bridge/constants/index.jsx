@@ -8,7 +8,7 @@ export const SECURITY_LEVEL = "frontend-hardened";
 export const SESSION_DURATION = 30 * 60 * 1000;
 export const RATE_LIMIT_WINDOW = 60 * 1000;
 export const ALLOWED_FILE_TYPES = ["image/png", "image/jpeg", "application/pdf"];
-export const MAX_FILE_SIZE = 10 * 1024 * 1024;
+export const MAX_FILE_SIZE = 20 * 1024 * 1024;
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const PASSWORD_PATTERN =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;

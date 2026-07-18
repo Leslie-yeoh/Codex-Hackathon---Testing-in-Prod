@@ -34,11 +34,11 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <section className={globalStyles.pageHeader}>
+      <section className={`${globalStyles.pageHeader} hover:!scale-100`}>
         <h1 className={globalStyles.pageTitle}>Settings</h1>
       </section>
 
-      <section className={styles.settingsShell}>
+      <section className={`${styles.settingsShell} hover:!scale-100`}>
         <div className={styles.mobileSectionSelect}>
           <label className={globalStyles.fieldLabel} htmlFor="settings-section">
             Settings Section
@@ -76,7 +76,7 @@ export default function SettingsPage() {
 
         <div className={styles.settingsPanel}>
           {activeSection === "profile" && (
-            <Container as="article" title={activeSectionLabel}>
+            <Container as="article" title={activeSectionLabel} className="hover:!scale-100">
           <div className={styles.profileGrid}>
             <div className={styles.avatarPanel}>
               <div className={styles.avatar}>
@@ -128,7 +128,7 @@ export default function SettingsPage() {
           )}
 
           {activeSection === "security" && (
-            <Container as="article" title={activeSectionLabel}>
+            <Container as="article" title={activeSectionLabel} className="hover:!scale-100">
           <div className={styles.fieldList}>
             {/*
             <ToggleRow
@@ -173,7 +173,7 @@ export default function SettingsPage() {
           )}
 
           {activeSection === "interface" && (
-            <Container as="article" title={activeSectionLabel}>
+            <Container as="article" title={activeSectionLabel} className="hover:!scale-100">
           <div className={styles.fieldList}>
             <div className={styles.themeOptions}>
               {THEME_OPTIONS.map((option) => (
@@ -219,7 +219,7 @@ export default function SettingsPage() {
           )}
 
           {activeSection === "privacy" && (
-            <Container as="article" title={activeSectionLabel}>
+            <Container as="article" title={activeSectionLabel} className="hover:!scale-100">
           <div className={styles.fieldList}>
             <ToggleRow
               checked={isCookieConsentEnabled}

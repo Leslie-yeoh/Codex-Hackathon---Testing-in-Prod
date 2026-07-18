@@ -9,6 +9,8 @@ import {
   saveRememberedEmail,
 } from "../../../services/login/loginService";
 import { hasValidationErrors } from "../../../utils/globalValidator";
+import { showToast } from "../../../components/Toast/ToastProvider";
+import { USER_ROLES } from "../../../constants";
 import {
   getLoginInitialForm,
   loginInitialErrors,
@@ -45,7 +47,7 @@ export default function useLoginForm() {
     setAlertMessage("");
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const { nextForm, nextErrors, isValid } = validateLoginForm(form);
@@ -58,7 +60,7 @@ export default function useLoginForm() {
       return;
     }
 
-    const result = authenticateUser(nextForm);
+    const result = await authenticateUser(nextForm);
 
     if (!result.ok) {
       setAlertMessage(result.message);
@@ -71,7 +73,8 @@ export default function useLoginForm() {
       clearRememberedEmail();
     }
 
-    router.push(result.user.mustChangePassword ? "/change-password" : "/home");
+    showToast("Successfully signed in.", "success");
+    router.push(result.user.role === USER_ROLES.ADMIN ? "/admin" : "/home");
   };
 
   return {
@@ -83,3 +86,7 @@ export default function useLoginForm() {
     updateField,
   };
 }
+
+
+
+

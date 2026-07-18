@@ -8,19 +8,26 @@ export class ApiClient {
       throw new Error("API base URL is not configured.");
     }
 
-    const response = await fetch(`${baseUrl}${endpoint}`, {
+    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+    const token =
+      typeof window === "undefined"
+        ? ""
+        : window.sessionStorage.getItem("legacyBridgeAccessToken") || "";
+    const response = await fetch(baseUrl + endpoint, {
+      ...options,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...(token ? { Authorization: "Bearer " + token } : {}),
         ...(options.headers || {}),
       },
-      ...options,
     });
 
     if (!response.ok) {
-      throw new Error("API request failed.");
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.detail || "API request failed.");
     }
 
-    return response.json();
+    return options.responseType === "blob" ? response.blob() : response.json();
   }
 }
 

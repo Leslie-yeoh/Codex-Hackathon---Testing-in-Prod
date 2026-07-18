@@ -14,12 +14,18 @@ export const globalStyles = {
   navLink: "rounded-md px-3 py-2 transition hover:bg-slate-100 hover:text-slate-950",
   profileBadge: "rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700",
 
-  section: "rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6",
+  section: [
+    "rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6",
+    "transition-transform duration-300 hover:scale-[1.02]",
+  ].join(" "),
   sectionHeader: "flex flex-col gap-1 md:flex-row md:items-end md:justify-between",
   sectionTitle: "text-lg font-semibold text-slate-950 md:text-xl",
   sectionDescription: "text-sm leading-6 text-slate-600",
   statsGrid: "grid grid-cols-1 gap-3 sm:grid-cols-3 md:gap-4",
-  statCard: "rounded-lg border border-slate-200 bg-white p-4 shadow-sm",
+  statCard: [
+    "rounded-lg border border-slate-200 bg-white p-4 shadow-sm",
+    "transition-transform duration-300 hover:scale-[1.02]",
+  ].join(" "),
   statLabel: "text-sm font-medium text-slate-500",
   statValue: "mt-2 text-2xl font-semibold text-slate-950 md:text-3xl",
 
@@ -38,7 +44,7 @@ export const globalStyles = {
   warningInput: "border-amber-400 focus:border-amber-500 focus:ring-amber-100",
   searchInput: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-100 md:max-w-md",
 
-  buttonBase: "inline-flex min-h-11 items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+  buttonBase: "inline-flex min-h-11 items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 enabled:hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60",
   primaryButton: "bg-teal-700 text-white hover:bg-teal-800 focus:ring-teal-600",
   secondaryButton: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-400",
   dangerButton: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",

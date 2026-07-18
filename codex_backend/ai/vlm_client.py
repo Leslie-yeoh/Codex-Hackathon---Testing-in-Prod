@@ -2,6 +2,8 @@ import base64
 import os
 from dataclasses import dataclass
 from typing import Optional
+
+from codex_backend.ai.prompts import USER_PROMPT_TEMPLATE
 import httpx
 from PIL import Image
 import io
@@ -43,13 +45,7 @@ class GeminiVLMClient:
             return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     def _build_contents(self, image_path: str, prompt: Optional[str] = None) -> list[dict]:
-        default_prompt = (
-            "You are a medical professional specializing in reading doctor's handwriting. "
-            "Analyze this handwritten medical note/prescription image carefully. "
-            "Extract all text content and convert it into clear, natural medical sentences. "
-            "Preserve medical terminology, dosages, frequencies, and patient instructions exactly as written. "
-            "Format the output as clean, readable medical notes."
-        )
+        default_prompt = USER_PROMPT_TEMPLATE
         return [{"role": "user", "parts": [{"text": prompt or default_prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": self._encode_image(image_path)}}]}]
 
     async def interpret_handwriting(
@@ -111,13 +107,7 @@ class SyncGeminiVLMClient:
             return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     def _build_contents(self, image_path: str, prompt: Optional[str] = None) -> list[dict]:
-        default_prompt = (
-            "You are a medical professional specializing in reading doctor's handwriting. "
-            "Analyze this handwritten medical note/prescription image carefully. "
-            "Extract all text content and convert it into clear, natural medical sentences. "
-            "Preserve medical terminology, dosages, frequencies, and patient instructions exactly as written. "
-            "Format the output as clean, readable medical notes."
-        )
+        default_prompt = USER_PROMPT_TEMPLATE
         return [{"role": "user", "parts": [{"text": prompt or default_prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": self._encode_image(image_path)}}]}]
 
     def interpret_handwriting(
@@ -186,13 +176,7 @@ class NVIDIAVLMClient:
 
     def _build_messages(self, image_path: str, prompt: Optional[str] = None) -> list[dict]:
         base64_image = self._encode_image(image_path)
-        default_prompt = (
-            "You are a medical professional specializing in reading doctor's handwriting. "
-            "Analyze this handwritten medical note/prescription image carefully. "
-            "Extract all text content and convert it into clear, natural medical sentences. "
-            "Preserve medical terminology, dosages, frequencies, and patient instructions exactly as written. "
-            "Format the output as clean, readable medical notes."
-        )
+        default_prompt = USER_PROMPT_TEMPLATE
         user_prompt = prompt or default_prompt
         return [
             {
@@ -287,13 +271,7 @@ class SyncNVIDIAVLMClient:
 
     def _build_messages(self, image_path: str, prompt: Optional[str] = None) -> list[dict]:
         base64_image = self._encode_image(image_path)
-        default_prompt = (
-            "You are a medical professional specializing in reading doctor's handwriting. "
-            "Analyze this handwritten medical note/prescription image carefully. "
-            "Extract all text content and convert it into clear, natural medical sentences. "
-            "Preserve medical terminology, dosages, frequencies, and patient instructions exactly as written. "
-            "Format the output as clean, readable medical notes."
-        )
+        default_prompt = USER_PROMPT_TEMPLATE
         user_prompt = prompt or default_prompt
         return [
             {

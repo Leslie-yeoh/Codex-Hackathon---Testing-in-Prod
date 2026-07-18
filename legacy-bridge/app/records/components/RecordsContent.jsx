@@ -1,6 +1,8 @@
 "use client";
 
 import { Download, Share2, SlidersHorizontal } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import BottomSheet from "../../../components/BottomSheet/BottomSheet";
 import Button from "../../../components/Button/Button";
 import Container from "../../../components/Container/Container";
@@ -30,6 +32,7 @@ export default function RecordsContent() {
     openRecordDetail,
     records,
     selectedRecord,
+    selectedImageUrl,
     setCustomDateRange,
     setDateRange,
     setIllness,
@@ -140,6 +143,7 @@ export default function RecordsContent() {
           {selectedRecord && isDetailOpen && (
             <RecordDetailModal
               record={selectedRecord}
+              imageUrl={selectedImageUrl}
               shareMessage={shareMessage}
               onClose={closeRecordDetail}
               onCopyShareLink={handleCopyShareLink}
@@ -153,6 +157,7 @@ export default function RecordsContent() {
 }
 
 function RecordDetailModal({
+  imageUrl,
   onClose,
   onCopyShareLink,
   onDownloadPdf,
@@ -222,6 +227,13 @@ function RecordDetailModal({
           />
           <DetailItem label="Confirmed At" value={record.confirmedAt} />
         </div>
+        {imageUrl && record.contentType?.startsWith("image/") && (
+          <img
+            src={imageUrl}
+            alt={record.originalFilename || "Original uploaded record"}
+            className={styles.originalImage}
+          />
+        )}
         <RecordContext context={record.context} />
         <FindingsTable findings={getRecordFindings(record)} />
       </section>
@@ -313,14 +325,20 @@ function DetailItem({ label, value }) {
 }
 
 function RecordContext({ context }) {
+  const isHtml = context.trimStart().startsWith("<");
+
   return (
     <section className={styles.contextPanel}>
       <h3 className={styles.contextTitle}>Document Context</h3>
-      {context ? (
+      {isHtml ? (
         <div
           className={styles.contextBody}
           dangerouslySetInnerHTML={{ __html: context }}
         />
+      ) : context ? (
+        <div className={styles.contextBody}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{context}</ReactMarkdown>
+        </div>
       ) : (
         <p className={styles.contextEmpty}>
           Context was not saved for this older record.
@@ -329,7 +347,6 @@ function RecordContext({ context }) {
     </section>
   );
 }
-
 function FindingsTable({ findings }) {
   return (
     <div className={styles.findingsTableWrap}>

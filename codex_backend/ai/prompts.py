@@ -12,17 +12,27 @@ Guidelines:
 4. Flag uncertain readings with [uncertain: "original text"] notation
 5. Maintain clinical accuracy over readability when in doubt"""
 
-USER_PROMPT_TEMPLATE = """Analyze this handwritten medical image. Extract all text and convert to clear medical notes.
+USER_PROMPT_TEMPLATE = """You are a multimodal document-extraction assistant. Analyze the supplied image containing patient or clinical information.
 
-Required output format:
-**Patient Information:** [if present]
-**Diagnosis/Assessment:** [clinical findings]
-**Medications:** [list each with: drug, dose, route, frequency, duration]
-**Instructions:** [patient counseling points]
-**Follow-up:** [return visits, labs, referrals]
-**Raw Transcription:** [verbatim text for reference]
+Perform this task in exactly two stages, in order:
 
-Be thorough. Preserve exact dosages (mg, mL, units), frequencies (daily, BID, TID, QID, PRN), and durations."""
+STAGE 1 â€” PARAGRAPH DESCRIPTION
+Write one natural, flowing paragraph (not a list) describing everything relevant visible in the image: patient identity, medicines/actions, amounts, durations, and instructions. Use only what is visibly present. If the image is unreadable or contains no relevant data, say so honestly.
+
+STAGE 2 â€” STRUCTURED JSON
+Using only the paragraph you just wrote, extract a JSON array. One object per distinct medicine, action, or observation. Each object must have exactly these keys: "patient_reference", "observation", "value", and "unit". patient_reference is the patient name, ID, or IC number exactly as it appears. observation is the medicine or action. value is a number or string, or null when no value applies. unit is a string or null when not applicable. Preserve original spelling and casing of proper nouns. Do not infer or add information. If the image is unreadable or contains no relevant data, return [].
+
+Output exactly this format:
+
+## Paragraph Description
+<paragraph>
+
+## Structured Data
+```json
+[{"patient_reference":"...","observation":"...","value":null,"unit":null}]
+```
+
+The JSON must be strictly valid, with no comments, trailing commas, extra keys, or text inside its code block."""
 
 MEDICAL_ABBREVIATIONS = {
     "qd": "daily",

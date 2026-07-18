@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import Container from "../../components/Container/Container";
 import AppShell from "../../components/Layout/AppShell";
+import { useAuth } from "../../hooks/globalHooks";
 import { globalStyles } from "../../styles/global.style";
 import {
   HOME_CAPABILITIES,
@@ -13,8 +16,11 @@ import styles from "./home.style";
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 export default function HomePage() {
+  const { isSignedIn } = useAuth();
+
   return (
     <AppShell>
+      {!isSignedIn && (
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
           <h1 className={styles.heroTitle}>
@@ -74,6 +80,7 @@ export default function HomePage() {
           </div>
         </aside>
       </section>
+      )}
 
       <section className={globalStyles.statsGrid}>
         {HOME_IMPACT_STATS.map((stat) => (
@@ -85,6 +92,7 @@ export default function HomePage() {
       </section>
 
       <Container
+        className="hover:!scale-100"
         title="How a record moves through Legacy Bridge"
         description="The product flow is written for daily use: upload the source, check what was extracted, correct missing information, confirm the record, then find it again when needed."
       >
@@ -92,6 +100,7 @@ export default function HomePage() {
           {HOME_WORKFLOW_STEPS.map((step, index) => (
             <div key={step} className={styles.stepItem}>
               <div className={styles.stepMarkerWrap}>
+                <span className={styles.stepRipple} aria-hidden="true" />
                 <span className={styles.stepMarker} />
                 {index < HOME_WORKFLOW_STEPS.length - 1 && (
                   <span className={styles.stepConnector} aria-hidden="true" />

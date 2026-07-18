@@ -26,6 +26,11 @@ const principles = [
   },
 ];
 
+const nationalGoals = [
+  "Support Malaysia's 2030 goal for a nationwide electronic medical record.",
+  "Replace paper records with secure, seamless sharing across public and private healthcare.",
+  "Reduce patient waiting times by making reviewed records easier to find and use.",
+];
 export default function AboutContent() {
   return (
     <>
@@ -50,6 +55,7 @@ export default function AboutContent() {
       </section>
 
       <Container
+        className="hover:!scale-100"
         title="How it works"
         description="The same workflow can be understood by non-technical users and technical teams: start with the source, organize the information, review it, then save it."
       >
@@ -71,6 +77,16 @@ export default function AboutContent() {
         ))}
       </section>
 
+      <Container
+        title="A prototype for Malaysia's healthcare future"
+        description="Legacy Bridge is a prototype exploring how these goals could be achieved through practical record digitisation and review."
+      >
+        <ul className={styles.goals}>
+          {nationalGoals.map((goal) => (
+            <li key={goal} className={styles.goal}>{goal}</li>
+          ))}
+        </ul>
+      </Container>
       <Container title="Technical note">
         <p className={styles.paragraph}>
           For technical readers, Legacy Bridge is shaped as a frontend workflow for
@@ -89,7 +105,12 @@ const styles = {
   grid: "grid gap-4 md:grid-cols-2",
   paragraph: "mt-3 text-sm leading-6 text-slate-600 md:text-base",
   timeline: "mt-5 grid gap-3",
-  timelineItem: "flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700",
+  timelineItem: [
+    "flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700",
+    "transition-transform duration-300 hover:scale-[1.02]",
+  ].join(" "),
   timelineNumber: "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-700 text-xs font-bold text-white",
   cards: "grid gap-4 md:grid-cols-3",
+  goals: "mt-5 grid gap-3",
+  goal: "rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm leading-6 text-teal-950",
 };

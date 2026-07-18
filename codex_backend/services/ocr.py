@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
+import json
+from html.parser import HTMLParser
 import os
 import re
 import tempfile
@@ -30,6 +33,8 @@ class OCRResponse(BaseModel):
     processing_time_ms: float = Field(..., description="Processing time in milliseconds")
     preprocessed_image_saved: bool = Field(False, description="Whether preprocessed image was saved")
     metadata: dict = Field(default_factory=dict)
+    extracted_fields: list[dict] = Field(default_factory=list)
+    file_id: Optional[str] = Field(None, description="GridFS file ID")
 
 
 class Base64ImageRequest(BaseModel):
@@ -48,6 +53,93 @@ class URLImageRequest(BaseModel):
     enhance: bool = Field(True, description="Apply full preprocessing pipeline")
     custom_prompt: Optional[str] = Field(None, description="Custom prompt for VLM")
 
+
+
+class Finding(BaseModel):
+    observation: str = Field(min_length=1)
+    value: str = Field(min_length=1)
+    unit: str = Field(min_length=1)
+
+
+class ConfirmOCRRequest(BaseModel):
+    patientID: str = Field(min_length=1)
+    findings: list[Finding] = Field(min_length=1)
+    context: str = Field(min_length=1)
+
+
+class ConfirmOCRResponse(BaseModel):
+    file_id: str
+    success: bool
+
+
+class _MarkdownParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts: list[str] = []
+        self.list_depth = 0
+        self.in_table = False
+        self.table_rows: list[list[str]] = []
+        self.table_row: list[str] | None = None
+        self.table_cell: list[str] | None = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "table":
+            self.in_table = True
+            self.table_rows = []
+        elif tag == "tr" and self.in_table:
+            self.table_row = []
+        elif tag in {"td", "th"} and self.in_table:
+            self.table_cell = []
+        elif tag in {"p", "div"}:
+            self.parts.append("\n\n")
+        elif tag == "br":
+            self.parts.append("\n")
+        elif tag in {"h1", "h2", "h3"}:
+            self.parts.append(f"\n\n{'#' * int(tag[1])} ")
+        elif tag in {"strong", "b"}:
+            self.parts.append("**")
+        elif tag in {"em", "i"}:
+            self.parts.append("*")
+        elif tag in {"ul", "ol"}:
+            self.list_depth += 1
+            self.parts.append("\n")
+        elif tag == "li":
+            self.parts.append("\n" + "  " * max(self.list_depth - 1, 0) + "- ")
+
+    def handle_endtag(self, tag):
+        if tag in {"td", "th"} and self.table_cell is not None:
+            if self.table_row is not None:
+                self.table_row.append("".join(self.table_cell).strip())
+            self.table_cell = None
+        elif tag == "tr" and self.in_table and self.table_row is not None:
+            self.table_rows.append(self.table_row)
+            self.table_row = None
+        elif tag == "table" and self.in_table:
+            if self.table_rows:
+                width = len(self.table_rows[0])
+                rows = [row + [""] * (width - len(row)) for row in self.table_rows]
+                self.parts.append("\n\n| " + " | ".join(rows[0]) + " |\n")
+                self.parts.append("| " + " | ".join("---" for _ in rows[0]) + " |\n")
+                self.parts.extend("| " + " | ".join(row) + " |\n" for row in rows[1:])
+            self.in_table = False
+        elif tag in {"strong", "b"}:
+            self.parts.append("**")
+        elif tag in {"em", "i"}:
+            self.parts.append("*")
+        elif tag in {"ul", "ol"}:
+            self.list_depth = max(self.list_depth - 1, 0)
+            self.parts.append("\n")
+
+    def handle_data(self, data):
+        if self.table_cell is not None:
+            self.table_cell.append(data)
+        else:
+            self.parts.append(data)
+
+def html_to_markdown(value: str) -> str:
+    parser = _MarkdownParser()
+    parser.feed(value)
+    return re.sub(r"\n{3,}", "\n\n", "".join(parser.parts)).strip()
 
 class BatchOCRResponse(BaseModel):
     """Batch OCR result."""
@@ -83,17 +175,42 @@ def get_workflow() -> DoctorHandwritingWorkflow:
     return workflow
 
 
-def convert_result_to_response(result: ProcessingResult) -> OCRResponse:
+def extract_structured_fields(text: str) -> list[dict]:
+    candidates = re.findall(r"```(?:json)?\s*(\[.*?\])\s*```|(\[[^\[\]]*\])", text, re.IGNORECASE | re.DOTALL)
+    for fenced, inline in candidates:
+        try:
+            fields = json.loads(fenced or inline)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(fields, list):
+            return [
+                {
+                    "patient_reference": field.get("patient_reference", ""),
+                    "observation": field.get("observation", ""),
+                    "value": field.get("value"),
+                    "unit": field.get("unit"),
+                }
+                for field in fields
+                if isinstance(field, dict) and set(field) == {"patient_reference", "observation", "value", "unit"}
+            ]
+    return []
+
+
+def convert_result_to_response(result: ProcessingResult, file_id: str | None = None) -> OCRResponse:
     """Convert an internal OCR result into the API response model."""
 
+    extracted_fields = extract_structured_fields(result.extracted_text)
+    natural_language = re.sub(r"```(?:json)?\s*\[.*?\]\s*```|\[(?=[^\[\]]*\"patient_reference\")[^\[\]]*\]", "", result.extracted_text, flags=re.IGNORECASE | re.DOTALL).strip()
     return OCRResponse(
         success=result.success,
-        natural_language=result.extracted_text,
+        natural_language=natural_language,
         raw_text=result.raw_text,
         confidence=round(result.confidence, 3),
         low_confidence_flag=result.confidence < 0.8,
         processing_time_ms=round(result.processing_time_ms, 1),
         preprocessed_image_saved=result.preprocessed_path is not None,
+        file_id=file_id,
+        extracted_fields=extracted_fields,
         metadata={
             "image_path": result.image_path,
             "preprocessed_path": result.preprocessed_path,
@@ -105,7 +222,9 @@ def convert_result_to_response(result: ProcessingResult) -> OCRResponse:
     )
 
 
-def process_image_path(image_path: str, enhance: bool = True, custom_prompt: str | None = None) -> OCRResponse:
+def process_image_path(
+    image_path: str, enhance: bool = True, custom_prompt: str | None = None, persist_result: bool = True
+) -> OCRResponse:
     """Process an image already available on the server filesystem."""
 
     if not os.path.exists(image_path):
@@ -115,30 +234,69 @@ def process_image_path(image_path: str, enhance: bool = True, custom_prompt: str
     wf.custom_prompt = custom_prompt
     wf.preprocess = enhance
     result = wf.process_single(image_path)
-    wf._save_result(result)
+    if persist_result:
+        wf._save_result(result)
     return convert_result_to_response(result)
 
 
-async def process_upload(file: UploadFile, enhance: bool = True, custom_prompt: str | None = None) -> OCRResponse:
-    """Process one uploaded image."""
-
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="File must be an image")
-
-    suffix = Path(file.filename or "upload.jpg").suffix or ".jpg"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        tmp.write(await file.read())
-        tmp_path = tmp.name
+def _render_pdf_first_page(pdf_path: str) -> str:
+    try:
+        import fitz
+    except ImportError as exc:
+        raise HTTPException(status_code=503, detail="PDF OCR support is unavailable") from exc
 
     try:
-        return process_image_path(tmp_path, enhance, custom_prompt)
+        document = fitz.open(pdf_path)
+        if document.page_count == 0:
+            raise ValueError("PDF has no pages")
+        pixmap = document[0].get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+        document.close()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Could not read PDF: {exc}") from exc
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as image_file:
+        image_file.write(pixmap.tobytes("png"))
+        return image_file.name
+
+async def process_upload(
+    file: UploadFile, user_id: str, enhance: bool = True, custom_prompt: str | None = None
+) -> OCRResponse:
+    """Process and persist one uploaded image."""
+
+    is_pdf = file.content_type == "application/pdf" or (file.filename or "").lower().endswith(".pdf")
+    if not is_pdf and (not file.content_type or not file.content_type.startswith("image/")):
+        raise HTTPException(status_code=400, detail="File must be an image or PDF")
+
+    image_bytes = await file.read()
+    suffix = Path(file.filename or "upload.jpg").suffix or ".jpg"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(image_bytes)
+        tmp_path = tmp.name
+
+    ocr_path = tmp_path
+    try:
+        if is_pdf:
+            ocr_path = _render_pdf_first_page(tmp_path)
+        response = process_image_path(ocr_path, enhance, custom_prompt, persist_result=False)
+        mongo_client = get_workflow().mongo_client
+        if mongo_client is None:
+            raise HTTPException(status_code=503, detail="GridFS storage is not configured")
+        response.file_id = mongo_client.save_ocr_upload(
+            image_bytes=image_bytes,
+            original_filename=file.filename or "upload.jpg",
+            content_type=(file.content_type or "application/pdf") if is_pdf else file.content_type,
+            user_id=user_id,
+            result=response,
+        )
+        return response
     finally:
+        if ocr_path != tmp_path and os.path.exists(ocr_path):
+            os.unlink(ocr_path)
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
-
 async def process_upload_batch(
-    files: list[UploadFile], enhance: bool = True, custom_prompt: str | None = None
+    files: list[UploadFile], user_id: str, enhance: bool = True, custom_prompt: str | None = None
 ) -> BatchOCRResponse:
     """Process multiple uploaded images."""
 
@@ -146,7 +304,7 @@ async def process_upload_batch(
     start_time = time.time()
 
     for file in files:
-        if not file.content_type or not file.content_type.startswith("image/"):
+        if not (file.content_type == "application/pdf" or (file.filename or "").lower().endswith(".pdf")) and (not file.content_type or not file.content_type.startswith("image/")):
             results.append(
                 OCRResponse(
                     success=False,
@@ -159,7 +317,7 @@ async def process_upload_batch(
                 )
             )
             continue
-        results.append(await process_upload(file, enhance, custom_prompt))
+        results.append(await process_upload(file, user_id, enhance, custom_prompt))
 
     successful = sum(1 for result in results if result.success)
     return BatchOCRResponse(
@@ -221,12 +379,83 @@ async def process_url(request: URLImageRequest) -> OCRResponse:
             os.unlink(tmp_path)
 
 
+
+
+def confirm_ocr_upload(file_id: str, payload: ConfirmOCRRequest, user_id: str) -> ConfirmOCRResponse:
+    mongo_client = get_workflow().mongo_client
+    if mongo_client is None:
+        raise HTTPException(status_code=503, detail="GridFS storage is not configured")
+
+    try:
+        saved = mongo_client.finalize_ocr_upload(
+            file_id=file_id,
+            user_id=user_id,
+            patient_id=payload.patientID.strip(),
+            findings=[finding.model_dump() for finding in payload.findings],
+            context_markdown=payload.context,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if not saved:
+        raise HTTPException(status_code=404, detail="OCR upload not found")
+    return ConfirmOCRResponse(file_id=file_id, success=True)
+
 def get_health() -> HealthResponse:
     """Return OCR service health details."""
 
     wf = get_workflow()
     return HealthResponse(status="healthy", model=wf.gemini_model, api_configured=bool(wf.gemini_api_key and wf.api_key))
 
+
+async def get_system_health() -> list[dict[str, str]]:
+    """Check the dependencies shown on the admin dashboard."""
+
+    wf = get_workflow()
+
+    async def endpoint_health(name: str, url: str, **request_options) -> dict[str, str]:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(url, **request_options)
+            response.raise_for_status()
+            return {"name": name, "detail": "Endpoint reachable", "status": "Healthy"}
+        except httpx.HTTPError:
+            return {"name": name, "detail": "Endpoint unavailable", "status": "Unavailable"}
+
+    async def mongo_health() -> dict[str, str]:
+        try:
+            if not wf.mongo_client or not wf.mongo_client.client:
+                raise RuntimeError
+            await asyncio.to_thread(wf.mongo_client.client.admin.command, "ping")
+            return {"name": "MongoDB", "detail": "Database connected", "status": "Healthy"}
+        except Exception:
+            return {"name": "MongoDB", "detail": "Database unavailable", "status": "Unavailable"}
+
+    gemini = (
+        endpoint_health(
+            "Gemini",
+            f"https://generativelanguage.googleapis.com/v1beta/models/{wf.gemini_model}",
+            params={"key": wf.gemini_api_key},
+        )
+        if wf.gemini_api_key
+        else asyncio.sleep(0, result={"name": "Gemini", "detail": "API key not configured", "status": "Pending"})
+    )
+    nvidia = (
+        endpoint_health(
+            "NVIDIA",
+            "https://integrate.api.nvidia.com/v1/models",
+            headers={"Authorization": f"Bearer {wf.api_key}"},
+        )
+        if wf.api_key
+        else asyncio.sleep(0, result={"name": "NVIDIA", "detail": "API key not configured", "status": "Pending"})
+    )
+    mongodb, gemini_result, nvidia_result = await asyncio.gather(mongo_health(), gemini, nvidia)
+    return [
+        {"name": "Backend API", "detail": "Endpoint responding", "status": "Healthy"},
+        mongodb,
+        gemini_result,
+        nvidia_result,
+    ]
 
 def get_upload_form_html() -> str:
     """Return the simple upload test page."""

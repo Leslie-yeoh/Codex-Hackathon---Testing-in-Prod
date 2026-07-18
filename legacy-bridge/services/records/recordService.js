@@ -102,8 +102,15 @@ class RecordService {
       return waitForMock(readRecordsByUser(currentUser).map(normalizeRecord), signal);
     }
 
-    const payload = await apiClient("/api/records", { signal });
+    const payload = await apiClient("/ocr/records", { signal });
     return normalizeRecordList(payload);
+  }
+
+  static fetchCurrentUserRecordFile(recordId, { signal } = {}) {
+    return apiClient("/ocr/records/" + recordId + "/file", {
+      signal,
+      responseType: "blob",
+    });
   }
 
   static async saveCurrentUserRecord(record, { signal } = {}) {
@@ -157,6 +164,8 @@ class RecordService {
 
 export const getCurrentUserRecords = (options) =>
   RecordService.fetchCurrentUserRecords(options);
+export const getCurrentUserRecordFile = (recordId, options) =>
+  RecordService.fetchCurrentUserRecordFile(recordId, options);
 export const saveCurrentUserRecord = (record, options) =>
   RecordService.saveCurrentUserRecord(record, options);
 

@@ -44,7 +44,7 @@ export default function AdminUsersContent() {
           </Button>
         </div>
 
-        <div className={globalStyles.tableWrap}>
+        <div className={cn(globalStyles.tableWrap, "mt-4")}>
           <div className={globalStyles.tableScroll}>
             <table className={globalStyles.table}>
               <thead className={globalStyles.tableHead}>

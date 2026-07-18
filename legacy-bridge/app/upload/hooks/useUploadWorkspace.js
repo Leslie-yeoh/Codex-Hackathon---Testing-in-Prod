@@ -9,13 +9,12 @@ import TableHeader from "@tiptap/extension-table-header";
 import TableRow from "@tiptap/extension-table-row";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
-import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from "../../../constants";
+import { MAX_FILE_SIZE } from "../../../constants";
 import { extractedDefaults } from "../../../constants/mock/upload.mock";
 import {
-  getCurrentUserRecords,
-  saveCurrentUserRecord,
-} from "../../../services/records/recordService";
-import { extractDocument } from "../../../services/upload/uploadService";
+  confirmExtraction,
+  extractDocument,
+} from "../../../services/upload/uploadService";
 
 const editorExtensions = [
   StarterKit.configure({
@@ -45,7 +44,25 @@ export default function useUploadWorkspace() {
   const [hasConfirmedCurrentRecord, setHasConfirmedCurrentRecord] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [latestRecord, setLatestRecord] = useState(null);
+  const [gridfsFileId, setGridfsFileId] = useState("");
+  const [originalImageUrl, setOriginalImageUrl] = useState("");
+  const [enhanceImage, setEnhanceImage] = useState(false);
   const fileInputRef = useRef(null);
+  const originalImageUrlRef = useRef("");
+
+  const clearOriginalImage = () => {
+    if (originalImageUrlRef.current) {
+      URL.revokeObjectURL(originalImageUrlRef.current);
+      originalImageUrlRef.current = "";
+    }
+    setOriginalImageUrl("");
+  };
+
+  useEffect(() => () => {
+    if (originalImageUrlRef.current) {
+      URL.revokeObjectURL(originalImageUrlRef.current);
+    }
+  }, []);
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -65,23 +82,32 @@ export default function useUploadWorkspace() {
     },
   });
 
-  const startExtraction = async (fileName = "") => {
+  const startExtraction = async (file) => {
+    clearOriginalImage();
+    originalImageUrlRef.current = URL.createObjectURL(file);
+    setOriginalImageUrl(originalImageUrlRef.current);
     setStage("processing");
     setDecision("Pending review");
     setIsConfirmedChecked(false);
     setAlertMessage("");
     setHasConfirmedCurrentRecord(false);
-    setSelectedFileName(fileName);
+    setSelectedFileName(file.name);
+    setGridfsFileId("");
     setLatestRecord(null);
 
     try {
-      const extractedData = await extractDocument({ fileName });
+      const extractedData = await extractDocument({ file, enhance: enhanceImage });
+      if (!extractedData.fileId) {
+        throw new Error("OCR storage did not return a file ID.");
+      }
+      setGridfsFileId(extractedData.fileId);
       setForm(extractedData);
       editor?.commands.setContent(extractedData.rawText);
       setStage("review");
     } catch (error) {
       if (error.name !== "AbortError") {
         setAlertMessage("Unable to extract this document. Please try again.");
+        clearOriginalImage();
         setStage("empty");
       }
     }
@@ -94,19 +120,19 @@ export default function useUploadWorkspace() {
       return;
     }
 
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      setAlertMessage("Please upload a PNG, JPG, or PDF file.");
+    if (!file.type.startsWith("image/")) {
+      setAlertMessage("Please upload a PNG or JPG image.");
       event.target.value = "";
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setAlertMessage("The selected file is larger than the 10 MB limit.");
+      setAlertMessage("The selected file is larger than the 20 MB limit.");
       event.target.value = "";
       return;
     }
 
-    void startExtraction(file.name);
+    void startExtraction(file);
     event.target.value = "";
   };
 
@@ -152,19 +178,6 @@ export default function useUploadWorkspace() {
     setHasConfirmedCurrentRecord(false);
   };
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    getCurrentUserRecords({ signal: controller.signal })
-      .then(setConfirmedRecords)
-      .catch((error) => {
-        if (error.name !== "AbortError") {
-          setConfirmedRecords([]);
-        }
-      });
-
-    return () => controller.abort();
-  }, []);
 
   const handleConfirm = async () => {
     if (hasConfirmedCurrentRecord) {
@@ -198,15 +211,25 @@ export default function useUploadWorkspace() {
       }),
       confirmedAtISO: confirmedDate.toISOString(),
     };
-    const result = await saveCurrentUserRecord(record);
-
-    if (!result.ok) {
-      setAlertMessage(result.message);
+    if (!gridfsFileId) {
+      setAlertMessage("OCR storage is unavailable. Upload the image again.");
       return;
     }
 
-    setConfirmedRecords(result.records);
-    setLatestRecord(result.record);
+    try {
+      await confirmExtraction({
+        fileId: gridfsFileId,
+        patientId: record.patientId,
+        findings,
+        context: form.rawText,
+      });
+    } catch (error) {
+      setAlertMessage(error.message || "Unable to save this OCR record.");
+      return;
+    }
+
+    setConfirmedRecords((current) => [record, ...current].slice(0, 25));
+    setLatestRecord(record);
     setHasConfirmedCurrentRecord(true);
     setDecision("Confirmed");
     setAlertMessage(
@@ -219,6 +242,8 @@ export default function useUploadWorkspace() {
     setIsConfirmedChecked(false);
     setAlertMessage("");
     setSelectedFileName("");
+    setGridfsFileId("");
+    clearOriginalImage();
     setLatestRecord(null);
     setDecision("Pending review");
     setHasConfirmedCurrentRecord(false);
@@ -239,6 +264,7 @@ export default function useUploadWorkspace() {
     confirmedRecords,
     decision,
     editor,
+    enhanceImage,
     fileInputRef,
     form,
     handleConfirm,
@@ -246,9 +272,11 @@ export default function useUploadWorkspace() {
     isConfirmedChecked,
     isConfirmDisabled,
     latestRecord,
+    originalImageUrl,
     removeFinding,
     resetUpload,
     selectedFileName,
+    setEnhanceImage,
     setIsConfirmedChecked,
     stage,
     updateField,

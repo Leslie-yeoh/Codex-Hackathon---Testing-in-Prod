@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -11,20 +13,22 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorClient
-from passlib.context import CryptContext
 from pydantic import BaseModel, Field
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-JWT_SECRET = os.getenv("JWT_SECRET", "change-me")
+MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET must be set")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "30"))
 
-client = AsyncIOMotorClient(MONGO_URI)
+client = AsyncIOMotorClient(MONGO_URI, serverSelectionTimeoutMS=10000)
 users_collection = client["codex"]["users"]
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
+from bson import ObjectId
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
@@ -32,6 +36,7 @@ class SignupRequest(BaseModel):
     """Signup payload."""
 
     username: str = Field(min_length=1)
+    email: str = Field(min_length=3)
     password: str = Field(min_length=8)
     confirm_password: str = Field(min_length=8)
 
@@ -39,7 +44,7 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     """Login payload."""
 
-    username: str = Field(min_length=1)
+    email: str = Field(min_length=3)
     password: str = Field(min_length=1)
 
 
@@ -54,18 +59,20 @@ class UserResponse(BaseModel):
     """Public user response."""
 
     username: str
+    email: str
+    role: str = "User"
 
 
 def hash_password(password: str) -> str:
     """Hash a plaintext password with bcrypt."""
 
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(hashlib.sha256(password.encode("utf-8")).digest(), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plaintext password against a stored bcrypt hash."""
 
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(hashlib.sha256(plain_password.encode("utf-8")).digest(), hashed_password.encode("utf-8"))
 
 
 def create_access_token(subject: str, user_id: str) -> str:
@@ -94,19 +101,24 @@ async def signup_user(payload: SignupRequest) -> UserResponse:
     if payload.password != payload.confirm_password:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="passwords do not match")
 
-    if await users_collection.find_one({"username": payload.username}):
+    if await users_collection.find_one({"$or": [{"username": payload.username}, {"email": payload.email}]}):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username already exists")
 
     await users_collection.insert_one(
-        {"username": payload.username, "hashed_password": hash_password(payload.password)}
+        {
+            "username": payload.username,
+            "email": payload.email,
+            "role": "User",
+            "hashed_password": hash_password(payload.password),
+        }
     )
-    return UserResponse(username=payload.username)
+    return UserResponse(username=payload.username, email=payload.email, role="User")
 
 
 async def login_user(payload: LoginRequest) -> TokenResponse:
     """Authenticate a user and return an access token."""
 
-    user = await users_collection.find_one({"username": payload.username})
+    user = await users_collection.find_one({"$or": [{"email": payload.email}, {"username": payload.email}]})
     if not user or not verify_password(payload.password, user["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -114,26 +126,62 @@ async def login_user(payload: LoginRequest) -> TokenResponse:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return TokenResponse(access_token=create_access_token(payload.username, str(user["_id"])))
+    return TokenResponse(access_token=create_access_token(user["username"], str(user["_id"])))
 
+
+async def list_users(current_user: dict[str, Any]) -> list[UserResponse]:
+    """Return all users to an administrator without password hashes."""
+
+    if current_user.get("role") != "Admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="admin access required")
+
+    return [
+        UserResponse(
+            username=user["username"],
+            email=user.get("email", ""),
+            role=user.get("role", "User"),
+        )
+        async for user in users_collection.find({}, {"_id": 0, "username": 1, "email": 1, "role": 1})
+    ]
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict[str, Any]:
     """Return the current user from a Bearer token."""
 
-    username = decode_access_token(token).get("sub")
-    if not username:
+    token_data = decode_access_token(token)
+    username = token_data.get("sub")
+    user_id = token_data.get("userID")
+    if not username or not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user = await users_collection.find_one({"username": username}, {"_id": 0, "hashed_password": 0})
+    try:
+        user_object_id = ObjectId(user_id)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
+    user = await users_collection.find_one(
+        {"_id": user_object_id, "username": username}, {"_id": 0, "hashed_password": 0}
+    )
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    user["user_id"] = user_object_id
     return user
+
+
+
+
+
+
+
 

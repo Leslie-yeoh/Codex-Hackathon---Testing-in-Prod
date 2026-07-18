@@ -3,3 +3,5 @@
 **/.next/
 **/node_modules/
 **/.vscode/
+!legacy-bridge/.env.example
+images/
