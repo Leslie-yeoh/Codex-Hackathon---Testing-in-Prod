@@ -86,7 +86,7 @@ export default function UploadWorkspace() {
               onChange={handleFileSelect}
             />
           </div>
-          <label className={styles.enhanceOption}>
+          {/* <label className={styles.enhanceOption}>
             <input
               type="checkbox"
               checked={enhanceImage}
@@ -96,7 +96,7 @@ export default function UploadWorkspace() {
               Enhance image
               <span className={styles.enhanceWarning}>Warning: this slows processing.</span>
             </span>
-          </label>
+          </label> */}
         </>
       )}
       {stage === "processing" && (

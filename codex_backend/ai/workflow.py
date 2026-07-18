@@ -64,7 +64,7 @@ class DoctorHandwritingWorkflow:
         if not self.api_key:
             raise ValueError("NVIDIA_NIM_API_KEY not found")
         self.model = model
-        self.mistral_model = "mistral-small-latest"
+        self.mistral_model = "mistral-large-latest"
         self.gemini_model = gemini_model
         self.preprocess = preprocess
         self.preprocess_dir = preprocess_dir
