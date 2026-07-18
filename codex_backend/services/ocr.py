@@ -405,7 +405,7 @@ def get_health() -> HealthResponse:
     """Return OCR service health details."""
 
     wf = get_workflow()
-    return HealthResponse(status="healthy", model=wf.gemini_model, api_configured=bool(wf.gemini_api_key and wf.api_key))
+    return HealthResponse(status="healthy", model=wf.openai_model, api_configured=bool(wf.openai_api_key or wf.mistral_api_key or wf.gemini_api_key or wf.api_key))
 
 
 async def get_system_health() -> list[dict[str, str]]:
@@ -431,6 +431,15 @@ async def get_system_health() -> list[dict[str, str]]:
         except Exception:
             return {"name": "MongoDB", "detail": "Database unavailable", "status": "Unavailable"}
 
+    openai = (
+        endpoint_health(
+            "OpenAI GPT-5.6 Terra",
+            f"https://api.openai.com/v1/models/{wf.openai_model}",
+            headers={"Authorization": f"Bearer {wf.openai_api_key}"},
+        )
+        if wf.openai_api_key
+        else asyncio.sleep(0, result={"name": "OpenAI GPT-5.6 Terra", "detail": "API key not configured", "status": "Pending"})
+    )
     gemini = (
         endpoint_health(
             "Gemini",
@@ -459,10 +468,11 @@ async def get_system_health() -> list[dict[str, str]]:
         if wf.api_key
         else asyncio.sleep(0, result={"name": "NVIDIA", "detail": "API key not configured", "status": "Pending"})
     )
-    mongodb, mistral_result, gemini_result, nvidia_result = await asyncio.gather(mongo_health(), mistral, gemini, nvidia)
+    mongodb, openai_result, mistral_result, gemini_result, nvidia_result = await asyncio.gather(mongo_health(), openai, mistral, gemini, nvidia)
     return [
         {"name": "Backend API", "detail": "Endpoint responding", "status": "Healthy"},
         mongodb,
+        openai_result,
         mistral_result,
         gemini_result,
         nvidia_result,

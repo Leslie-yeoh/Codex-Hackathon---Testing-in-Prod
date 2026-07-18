@@ -428,3 +428,116 @@ class SyncMistralVLMClient(SyncNVIDIAVLMClient):
         content = message.get("content", "")
         text = content if isinstance(content, str) else "".join(part.get("text", "") for part in content)
         return VLMResponse(text=text, reasoning=message.get("reasoning_content"), usage=data.get("usage"), raw_response=data)
+
+def _openai_response_text(data: dict) -> str:
+    if data.get("output_text"):
+        return data["output_text"]
+    return "".join(
+        content.get("text", "")
+        for item in data.get("output", [])
+        for content in item.get("content", [])
+        if content.get("type") == "output_text"
+    )
+
+
+def _openai_usage(data: dict) -> dict:
+    usage = data.get("usage") or {}
+    return {
+        **usage,
+        "total_tokens": usage.get("total_tokens", usage.get("input_tokens", 0) + usage.get("output_tokens", 0)),
+        "completion_tokens": usage.get("output_tokens", 0),
+    }
+
+
+class OpenAIVLMClient(NVIDIAVLMClient):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        base_url: str = "https://api.openai.com/v1",
+        model: str = "gpt-5.6-terra",
+        timeout: float = 60.0,
+    ):
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            raise ValueError("OPENAI_API_KEY not provided or found in environment")
+        self.base_url = base_url.rstrip("/")
+        self.model = model
+        self.timeout = timeout
+        self._client = httpx.AsyncClient(
+            base_url=self.base_url,
+            headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+            timeout=self.timeout,
+        )
+
+    def _build_input(self, image_path: str, prompt: Optional[str] = None) -> list[dict]:
+        return [{
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": prompt or USER_PROMPT_TEMPLATE},
+                {"type": "input_image", "image_url": f"data:image/jpeg;base64,{self._encode_image(image_path)}", "detail": "high"},
+            ],
+        }]
+
+    async def interpret_handwriting(
+        self,
+        image_path: str,
+        prompt: Optional[str] = None,
+        max_tokens: int = 2048,
+        temperature: float = 0.1,
+    ) -> VLMResponse:
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image not found: {image_path}")
+        response = await self._client.post(
+            "/responses",
+            json={"model": self.model, "input": self._build_input(image_path, prompt), "max_output_tokens": max_tokens},
+        )
+        response.raise_for_status()
+        data = response.json()
+        return VLMResponse(text=_openai_response_text(data), usage=_openai_usage(data), raw_response=data)
+
+
+class SyncOpenAIVLMClient(SyncNVIDIAVLMClient):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        base_url: str = "https://api.openai.com/v1",
+        model: str = "gpt-5.6-terra",
+        timeout: float = 60.0,
+    ):
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            raise ValueError("OPENAI_API_KEY not provided or found in environment")
+        self.base_url = base_url.rstrip("/")
+        self.model = model
+        self.timeout = timeout
+        self._client = httpx.Client(
+            base_url=self.base_url,
+            headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+            timeout=self.timeout,
+        )
+
+    def _build_input(self, image_path: str, prompt: Optional[str] = None) -> list[dict]:
+        return [{
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": prompt or USER_PROMPT_TEMPLATE},
+                {"type": "input_image", "image_url": f"data:image/jpeg;base64,{self._encode_image(image_path)}", "detail": "high"},
+            ],
+        }]
+
+    def interpret_handwriting(
+        self,
+        image_path: str,
+        prompt: Optional[str] = None,
+        max_tokens: int = 2048,
+        temperature: float = 0.1,
+    ) -> VLMResponse:
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image not found: {image_path}")
+        response = self._client.post(
+            "/responses",
+            json={"model": self.model, "input": self._build_input(image_path, prompt), "max_output_tokens": max_tokens},
+        )
+        response.raise_for_status()
+        data = response.json()
+        return VLMResponse(text=_openai_response_text(data), usage=_openai_usage(data), raw_response=data)

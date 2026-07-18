@@ -10,7 +10,7 @@ from typing import Optional, List
 from pathlib import Path
 from datetime import datetime
 
-from codex_backend.ai.vlm_client import GeminiVLMClient, MistralVLMClient, NVIDIAVLMClient, SyncGeminiVLMClient, SyncMistralVLMClient, SyncNVIDIAVLMClient, VLMResponse
+from codex_backend.ai.vlm_client import GeminiVLMClient, MistralVLMClient, NVIDIAVLMClient, OpenAIVLMClient, SyncGeminiVLMClient, SyncMistralVLMClient, SyncNVIDIAVLMClient, SyncOpenAIVLMClient, VLMResponse
 from codex_backend.ai.preprocessor import preprocess_handwriting, HandwritingPreprocessor
 from codex_backend.db.mongo_ocr import MongoDBClient
 
@@ -59,11 +59,11 @@ class DoctorHandwritingWorkflow:
         mongo_client: Optional[MongoDBClient] = None,
     ):
         self.api_key = api_key or os.getenv("NVIDIA_NIM_API_KEY")
+        self.openai_api_key = os.getenv("OPENAI_API_KEY")
         self.mistral_api_key = os.getenv("MISTRAL_API_KEY")
         self.gemini_api_key = gemini_api_key or os.getenv("GEMINI_API_KEY")
-        if not self.api_key:
-            raise ValueError("NVIDIA_NIM_API_KEY not found")
         self.model = model
+        self.openai_model = os.getenv("OPENAI_MODEL_NAME", "gpt-5.6-terra")
         self.mistral_model = "mistral-large-latest"
         self.gemini_model = gemini_model
         self.preprocess = preprocess
@@ -130,7 +130,14 @@ class DoctorHandwritingWorkflow:
         timestamp: str,
     ) -> ProcessingResult:
         response = None
-        if self.mistral_api_key:
+        if self.openai_api_key:
+            try:
+                with SyncOpenAIVLMClient(api_key=self.openai_api_key, model=self.openai_model) as client:
+                    response = client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+            except Exception as exc:
+                print(f"OpenAI OCR failed, falling back to Mistral: {exc}")
+
+        if response is None and self.mistral_api_key:
             try:
                 with SyncMistralVLMClient(api_key=self.mistral_api_key, model=self.mistral_model) as client:
                     response = client.interpret_handwriting(process_path, prompt=self.custom_prompt)
@@ -169,7 +176,14 @@ class DoctorHandwritingWorkflow:
         timestamp: str,
     ) -> ProcessingResult:
         response = None
-        if self.mistral_api_key:
+        if self.openai_api_key:
+            try:
+                async with OpenAIVLMClient(api_key=self.openai_api_key, model=self.openai_model) as client:
+                    response = await client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+            except Exception as exc:
+                print(f"OpenAI OCR failed, falling back to Mistral: {exc}")
+
+        if response is None and self.mistral_api_key:
             try:
                 async with MistralVLMClient(api_key=self.mistral_api_key, model=self.mistral_model) as client:
                     response = await client.interpret_handwriting(process_path, prompt=self.custom_prompt)
