@@ -69,6 +69,11 @@ const technologyStack = [
     icon: "/logo/language_icon/Next.js.png",
   },
   {
+    name: "Tailwind CSS",
+    type: "CSS framework",
+    icon: "/logo/language_icon/tailwind.png",
+  },
+  {
     name: "MongoDB",
     type: "Database framework",
     icon: "/logo/language_icon/mongodb.png",
@@ -82,6 +87,11 @@ const technologyStack = [
     name: "Gemini",
     type: "AI support tool",
     icon: "/logo/language_icon/gemini-color.png",
+  },
+  {
+    name: "Mistral AI",
+    type: "OCR fallback model",
+    icon: "/logo/language_icon/mistral-ai.png",
   },
 ];
 
