@@ -9,11 +9,16 @@ const emptyWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function DashboardContent() {
   const {
+    isLoading,
     kpis,
     moduleHealth,
     systemConditions,
     weeklyVolume,
   } = useDashboardOverview();
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   const hasWeeklyVolume = weeklyVolume.length > 0;
   const chartVolume = hasWeeklyVolume
     ? weeklyVolume
@@ -105,6 +110,38 @@ export default function DashboardContent() {
               <p className={styles.conditionValue}>{item.value}</p>
               <p className={styles.conditionDetail}>{item.detail}</p>
             </div>
+          ))}
+        </div>
+      </Container>
+    </div>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className={styles.contentStack} role="status" aria-busy="true">
+      <span className="sr-only">Loading dashboard data...</span>
+      <section className={globalStyles.statsGrid}>
+        {[0, 1, 2].map((index) => (
+          <div key={index} className="h-28 animate-pulse rounded-lg bg-slate-200" />
+        ))}
+      </section>
+      <section className={styles.grid}>
+        <Container title="Weekly Processing Volume">
+          <div className="mt-5 h-64 animate-pulse rounded-lg bg-slate-200" />
+        </Container>
+        <Container title="System Health">
+          <div className="mt-5 grid gap-3">
+            {[0, 1, 2].map((index) => (
+              <div key={index} className="h-20 animate-pulse rounded-lg bg-slate-200" />
+            ))}
+          </div>
+        </Container>
+      </section>
+      <Container title="System Condition">
+        <div className="grid gap-3 md:grid-cols-3">
+          {[0, 1, 2].map((index) => (
+            <div key={index} className="h-36 animate-pulse rounded-lg bg-slate-200" />
           ))}
         </div>
       </Container>
