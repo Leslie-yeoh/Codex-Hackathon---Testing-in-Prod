@@ -11,6 +11,7 @@ import DateRangePicker from "../../../components/DateRangePicker/DateRangePicker
 import { globalStyles } from "../../../styles/global.style";
 import { DATE_FILTER_OPTIONS } from "../constants";
 import useRecordsView, { getRecordFindings } from "../hooks/useRecordsView";
+import { downloadRecordCsv, downloadRecordJson } from "../utils/shareRecord.utils";
 import styles from "../records.style";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
@@ -211,6 +212,24 @@ function RecordDetailModal({
           >
             <Download size={16} aria-hidden="true" />
             PDF
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className={styles.actionButton}
+            onClick={() => downloadRecordJson(record)}
+          >
+            <Download size={16} aria-hidden="true" />
+            JSON
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className={styles.actionButton}
+            onClick={() => downloadRecordCsv(record)}
+          >
+            <Download size={16} aria-hidden="true" />
+            CSV
           </Button>
         </div>
 

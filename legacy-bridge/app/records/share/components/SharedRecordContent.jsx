@@ -3,7 +3,11 @@
 import { useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Button from "../../../../components/Button/Button";
-import { decodeSharedRecord } from "../../utils/shareRecord.utils";
+import {
+  decodeSharedRecord,
+  downloadRecordCsv,
+  downloadRecordJson,
+} from "../../utils/shareRecord.utils";
 import styles from "./sharedRecord.style";
 
 export default function SharedRecordContent() {
@@ -39,14 +43,32 @@ export default function SharedRecordContent() {
             <p className={styles.label}>Shared Clinical Record</p>
             <h1 className={styles.title}>{record.id}</h1>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            className={styles.printButton}
-            onClick={() => window.print()}
-          >
-            Download PDF
-          </Button>
+          <div className={styles.actions}>
+            <Button
+              type="button"
+              variant="secondary"
+              className={styles.printButton}
+              onClick={() => window.print()}
+            >
+              Download PDF
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className={styles.printButton}
+              onClick={() => downloadRecordJson(record)}
+            >
+              JSON
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className={styles.printButton}
+              onClick={() => downloadRecordCsv(record)}
+            >
+              CSV
+            </Button>
+          </div>
         </div>
 
         <div className={styles.detailGrid}>

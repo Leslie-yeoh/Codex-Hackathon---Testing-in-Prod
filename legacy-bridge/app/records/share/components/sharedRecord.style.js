@@ -7,6 +7,7 @@ const styles = {
   title: "mt-1 text-2xl font-semibold text-slate-950",
   text: "mt-2 text-sm leading-6 text-slate-600",
   printButton: "print:hidden",
+  actions: "flex flex-wrap gap-2 print:hidden",
   detailGrid: "mt-5 grid gap-3 sm:grid-cols-2",
   detailItem: "rounded-md border border-slate-200 bg-slate-50 p-3 print:bg-white",
   detailLabel: "block text-sm font-medium text-slate-500",

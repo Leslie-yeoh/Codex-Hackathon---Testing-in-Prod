@@ -55,6 +55,11 @@ const technologyStack = [
     icon: "/logo/language_icon/Next.js.png",
   },
   {
+    name: "MongoDB",
+    type: "Database framework",
+    icon: "/logo/language_icon/mongodb.png",
+  },
+  {
     name: "Codex",
     type: "AI development assistant",
     icon: "/logo/language_icon/codex-color.png",
