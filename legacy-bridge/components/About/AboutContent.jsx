@@ -78,6 +78,7 @@ export default function AboutContent() {
       </section>
 
       <Container
+        className="hover:!scale-100"
         title="A prototype for Malaysia's healthcare future"
         description="Legacy Bridge is a prototype exploring how these goals could be achieved through practical record digitisation and review."
       >
@@ -112,5 +113,5 @@ const styles = {
   timelineNumber: "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-700 text-xs font-bold text-white",
   cards: "grid gap-4 md:grid-cols-3",
   goals: "mt-5 grid gap-3",
-  goal: "rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm leading-6 text-teal-950",
+  goal: "rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm leading-6 text-teal-950 transition-transform duration-300 hover:scale-[1.02]",
 };
