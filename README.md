@@ -99,7 +99,8 @@ Each endpoint reads its cache key before querying MongoDB. Uploads, record confi
 | `POST` | `/auth/signup` | Create an account |
 | `POST` | `/auth/login` | Receive a Bearer token |
 | `GET` | `/auth/me` | Get the signed-in user |
-| `POST` | `/ocr/handwriting` | Upload one image or PDF for OCR |
+| POST | /ocr/handwriting | Upload one image or PDF for OCR |
+| `POST` | `/ocr/handwriting/cli` | CLI OCR upload stored as `CLI_USER` |
 | `POST` | `/ocr/handwriting/batch` | Upload multiple files |
 | `POST` | `/ocr/handwriting/{file_id}/confirm` | Confirm reviewed OCR metadata |
 | `GET` | `/ocr/records` | List the signed-in user's confirmed records |

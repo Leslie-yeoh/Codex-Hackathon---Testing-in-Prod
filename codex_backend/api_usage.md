@@ -56,7 +56,16 @@ curl -X POST http://localhost:8000/ocr/handwriting \
   -F "enhance=true"
 ```
 
-### 6. Upload Multiple Files
+### 6. CLI Upload
+
+```bash
+curl -X POST http://localhost:8000/ocr/handwriting/cli \
+  -F "file=@images/doctor_note_1.jpg" \
+  -F "enhance=true"
+```
+
+The response matches the website upload response and is stored under `CLI_USER`.
+### 7. Upload Multiple Files
 
 ```bash
 curl -X POST http://localhost:8000/ocr/handwriting/batch \
@@ -65,7 +74,7 @@ curl -X POST http://localhost:8000/ocr/handwriting/batch \
   -F "enhance=true"
 ```
 
-### 7. Process Server File Path
+### 8. Process Server File Path
 
 ```bash
 curl -X POST http://localhost:8000/ocr/handwriting/filepath \
@@ -73,7 +82,7 @@ curl -X POST http://localhost:8000/ocr/handwriting/filepath \
   -F "enhance=true"
 ```
 
-### 8. Send Base64 Image
+### 9. Send Base64 Image
 
 ```bash
 curl -X POST http://localhost:8000/ocr/handwriting/base64 \
@@ -91,7 +100,7 @@ curl -X POST http://localhost:8000/ocr/handwriting/base64 `
   -d $body
 ```
 
-### 9. Process Image from URL
+### 10. Process Image from URL
 
 ```bash
 curl -X POST http://localhost:8000/ocr/handwriting/url \

@@ -30,6 +30,7 @@ from codex_backend.services.ocr import (
 )
 
 router = APIRouter()
+CLI_USER = "CLI_USER"
 
 
 def get_ocr_storage():
@@ -123,6 +124,22 @@ async def ocr_handwriting(
     )
     return response
 
+
+@router.post("/ocr/handwriting/cli", response_model=OCRResponse)
+async def ocr_handwriting_cli(
+    file: UploadFile = File(..., description="Doctor handwriting document (image or PDF)"),
+    enhance: bool = Form(True, description="Apply full preprocessing pipeline"),
+    custom_prompt: Optional[str] = Form(None, description="Custom prompt for VLM"),
+) -> OCRResponse:
+    """Process a CLI upload with the GUI OCR response format."""
+
+    response = await process_upload(file, CLI_USER, enhance, custom_prompt)
+    get_ocr_storage().log_audit_event(
+        CLI_USER,
+        "AI_Extraction",
+        f"Processed {file.filename or 'upload'} from the CLI.",
+    )
+    return response
 
 @router.post("/ocr/handwriting/batch", response_model=BatchOCRResponse)
 async def ocr_handwriting_batch(
