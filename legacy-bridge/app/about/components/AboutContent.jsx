@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import Container from "../Container/Container";
 
 const architecture = [
@@ -31,6 +33,57 @@ const nationalGoals = [
   "Replace paper records with secure, seamless sharing across public and private healthcare.",
   "Reduce patient waiting times by making reviewed records easier to find and use.",
 ];
+const technologyStack = [
+  {
+    name: "JavaScript",
+    type: "Programming language",
+    icon: "/logo/language_icon/JavaScript.png",
+  },
+  {
+    name: "Python",
+    type: "Programming language",
+    icon: "/logo/language_icon/Python.png",
+  },
+  {
+    name: "React",
+    type: "Frontend framework",
+    icon: "/logo/language_icon/React.png",
+  },
+  {
+    name: "Next.js",
+    type: "Application framework",
+    icon: "/logo/language_icon/Next.js.png",
+  },
+  {
+    name: "Codex",
+    type: "AI development assistant",
+    icon: "/logo/language_icon/codex-color.png",
+  },
+  {
+    name: "Gemini",
+    type: "AI support tool",
+    icon: "/logo/language_icon/gemini-color.png",
+  },
+];
+
+const futureDevelopments = [
+  {
+    title: "Redis integration",
+    description:
+      "Use Redis for short-lived extraction jobs, session coordination, caching, and queue status so users can leave and return without losing processing progress.",
+  },
+  {
+    title: "Better OCR model",
+    description:
+      "Improve document reading with stronger OCR support for handwriting, scanned prescriptions, low-quality images, tables, and mixed clinical notes.",
+  },
+  {
+    title: "Async extraction workspace",
+    description:
+      "Run extraction as a background job so larger files can process without blocking the page. Users can see progress, continue other work, and return when the result is ready.",
+  },
+];
+
 export default function AboutContent() {
   return (
     <>
@@ -98,6 +151,47 @@ export default function AboutContent() {
           standards-based health data exchange.
         </p>
       </Container>
+
+      <Container title="Future developments">
+        <p className={styles.paragraph}>
+          The current frontend is structured so future backend services can be added
+          without changing the user workflow.
+        </p>
+        <ol className={styles.timeline}>
+          {futureDevelopments.map((item, index) => (
+            <li key={item.title} className={styles.timelineItem}>
+              <span className={styles.timelineNumber}>{index + 1}</span>
+              <span>
+                <strong className={styles.futureTitle}>{item.title}</strong>
+                <span className={styles.futureDescription}>{item.description}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </Container>
+      <Container title="Programming languages, frameworks and AI">
+        <p className={styles.paragraph}>
+          Legacy Bridge is built with React, Next.js, and Tailwind CSS. The code is
+          written in JavaScript and TypeScript, following modern web development practices.
+        </p>
+        <div className={styles.techGrid}>
+          {technologyStack.map((item) => (
+            <article key={item.name} className={styles.techCard}>
+              <Image
+                src={item.icon}
+                alt={`${item.name} icon`}
+                width={48}
+                height={48}
+                className={styles.techIcon}
+              />
+              <div>
+                <h3 className={styles.techName}>{item.name}</h3>
+                <p className={styles.techType}>{item.type}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </Container>
     </>
   );
 }
@@ -113,5 +207,14 @@ const styles = {
   timelineNumber: "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-700 text-xs font-bold text-white",
   cards: "grid gap-4 md:grid-cols-3",
   goals: "mt-5 grid gap-3",
-  goal: "rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm leading-6 text-teal-950 transition-transform duration-300 hover:scale-[1.02]",
+  goal: "rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm leading-6 text-teal-950",
+  techGrid: "mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3",
+  techCard:
+    "flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4",
+  techIcon:
+    "h-12 w-12 shrink-0 rounded-md border border-slate-200 bg-white object-contain p-2",
+  techName: "text-sm font-semibold text-slate-950",
+  techType: "mt-1 text-xs font-medium text-slate-500",
+  futureTitle: "block text-sm font-semibold text-slate-950",
+  futureDescription: "mt-1 block text-sm leading-6 text-slate-600",
 };

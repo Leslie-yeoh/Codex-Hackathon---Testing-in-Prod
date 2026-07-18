@@ -1,10 +1,10 @@
 "use client";
 
-import Container from "../Container/Container";
-import { LOG_TYPE_OPTIONS } from "../../app/logs/constants";
-import useAuditLogs from "../../app/logs/hooks/useAuditLogs";
-import styles from "../../app/logs/logs.style";
-import { globalStyles } from "../../styles/global.style";
+import Container from "../../../components/Container/Container";
+import { LOG_TYPE_OPTIONS } from "../constants";
+import useAuditLogs from "../hooks/useAuditLogs";
+import styles from "../logs.style";
+import { globalStyles } from "../../../styles/global.style";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 

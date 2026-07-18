@@ -21,9 +21,10 @@ import {
 import { EditorContent } from "@tiptap/react";
 import useUploadWorkspace, {
   formatFindingValue,
-} from "../../app/upload/hooks/useUploadWorkspace";
-import Container from "../Container/Container";
-import { globalStyles } from "../../styles/global.style";
+} from "../hooks/useUploadWorkspace";
+import Container from "../../../components/Container/Container";
+import { ALLOWED_FILE_TYPES } from "../../../constants";
+import { globalStyles } from "../../../styles/global.style";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 

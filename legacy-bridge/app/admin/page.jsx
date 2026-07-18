@@ -1,10 +1,10 @@
 "use client";
 
-import DashboardContent from "../../components/Dashboard/DashboardContent";
-import RecentActivityContent from "../../components/Dashboard/RecentActivityContent";
+import DashboardContent from "../dashboard/components/DashboardContent";
+import RecentActivityContent from "../dashboard/components/RecentActivityContent";
 import AppShell from "../../components/Layout/AppShell";
 import PageHeader from "../../components/Layout/PageHeader";
-import LogsContent from "../../components/Logs/LogsContent";
+import LogsContent from "../logs/components/LogsContent";
 import Tabs from "../../components/Tabs/Tabs";
 import AdminSettingsContent from "./settings/components/AdminSettingsContent";
 import AdminUsersContent from "./users/components/AdminUsersContent";
