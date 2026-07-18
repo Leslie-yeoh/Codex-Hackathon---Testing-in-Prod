@@ -103,7 +103,14 @@ export default function DashboardContent() {
             <div key={item.label} className={styles.conditionCard}>
               <div className={styles.conditionHeader}>
                 <p className={styles.conditionLabel}>{item.label}</p>
-                <span className={cn(globalStyles.badge, globalStyles.badgeVerified)}>
+                <span
+                  className={cn(
+                    globalStyles.badge,
+                    item.status === "Attention"
+                      ? globalStyles.badgeFlagged
+                      : globalStyles.badgeVerified
+                  )}
+                >
                   {item.status}
                 </span>
               </div>
