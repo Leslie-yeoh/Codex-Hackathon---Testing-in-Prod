@@ -168,7 +168,7 @@ export default function NavigationBar() {
                   <span>{displayName}</span>
                 </span>
                 <span className={styles.chevron} aria-hidden="true">
-                  {isProfileOpen ? "▲" : "▼"}
+                  {isProfileOpen ? "ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â²" : "ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¼"}
                 </span>
               </button>
 
@@ -297,9 +297,9 @@ const styles = {
   profileMenuLink:
     "block rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100",
   profileMenuDanger:
-    "w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-red-700 transition hover:bg-red-50",
+    "w-full rounded-md px-3 py-2 text-left text-sm font-semibold text-red-700 transition-colors hover:!bg-red-600 hover:!text-white",
   signInLink:
-    "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50",
+    "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:!border-teal-700 hover:!bg-teal-700 hover:!text-white",
   mobileMenu: [
     "absolute left-4 right-4 top-full z-30",
     "mt-2 flex-col gap-3 rounded-lg border border-slate-200",
@@ -314,7 +314,7 @@ const styles = {
   mobileProfileHeader: "flex items-center gap-2 border-b border-slate-200 pb-2",
   mobileProfileCopy: "flex min-w-0 flex-col text-sm font-semibold text-slate-800",
   mobileSignInLink:
-    "rounded-md border border-slate-300 bg-white px-3 py-2 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50",
+    "rounded-md border border-slate-300 bg-white px-3 py-2 text-center text-sm font-semibold text-slate-700 transition-colors hover:!border-teal-700 hover:!bg-teal-700 hover:!text-white",
 };
 
 
