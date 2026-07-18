@@ -331,3 +331,100 @@ class SyncNVIDIAVLMClient:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+class MistralVLMClient(NVIDIAVLMClient):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        base_url: str = "https://api.mistral.ai/v1",
+        model: str = "mistral-small-latest",
+        timeout: float = 60.0,
+    ):
+        self.api_key = api_key or os.getenv("MISTRAL_API_KEY")
+        if not self.api_key:
+            raise ValueError("MISTRAL_API_KEY not provided or found in environment")
+        self.base_url = base_url.rstrip("/")
+        self.model = model
+        self.timeout = timeout
+        self._client = httpx.AsyncClient(
+            base_url=self.base_url,
+            headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+            timeout=self.timeout,
+        )
+
+    def _build_messages(self, image_path: str, prompt: Optional[str] = None) -> list[dict]:
+        return [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt or USER_PROMPT_TEMPLATE},
+                    {"type": "image_url", "image_url": f"data:image/jpeg;base64,{self._encode_image(image_path)}"},
+                ],
+            }
+        ]
+    async def interpret_handwriting(
+        self,
+        image_path: str,
+        prompt: Optional[str] = None,
+        max_tokens: int = 2048,
+        temperature: float = 0.1,
+    ) -> VLMResponse:
+        response = await self._client.post(
+            "/chat/completions",
+            json={
+                "model": self.model,
+                "messages": self._build_messages(image_path, prompt),
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+        message = data["choices"][0]["message"]
+        content = message.get("content", "")
+        text = content if isinstance(content, str) else "".join(part.get("text", "") for part in content)
+        return VLMResponse(text=text, reasoning=message.get("reasoning_content"), usage=data.get("usage"), raw_response=data)
+
+
+class SyncMistralVLMClient(SyncNVIDIAVLMClient):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        base_url: str = "https://api.mistral.ai/v1",
+        model: str = "mistral-small-latest",
+        timeout: float = 60.0,
+    ):
+        self.api_key = api_key or os.getenv("MISTRAL_API_KEY")
+        if not self.api_key:
+            raise ValueError("MISTRAL_API_KEY not provided or found in environment")
+        self.base_url = base_url.rstrip("/")
+        self.model = model
+        self.timeout = timeout
+        self._client = httpx.Client(
+            base_url=self.base_url,
+            headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+            timeout=self.timeout,
+        )
+
+    def interpret_handwriting(
+        self,
+        image_path: str,
+        prompt: Optional[str] = None,
+        max_tokens: int = 2048,
+        temperature: float = 0.1,
+    ) -> VLMResponse:
+        response = self._client.post(
+            "/chat/completions",
+            json={
+                "model": self.model,
+                "messages": self._build_messages(image_path, prompt),
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+        message = data["choices"][0]["message"]
+        content = message.get("content", "")
+        text = content if isinstance(content, str) else "".join(part.get("text", "") for part in content)
+        return VLMResponse(text=text, reasoning=message.get("reasoning_content"), usage=data.get("usage"), raw_response=data)

@@ -10,7 +10,7 @@ from typing import Optional, List
 from pathlib import Path
 from datetime import datetime
 
-from codex_backend.ai.vlm_client import GeminiVLMClient, NVIDIAVLMClient, SyncGeminiVLMClient, SyncNVIDIAVLMClient, VLMResponse
+from codex_backend.ai.vlm_client import GeminiVLMClient, MistralVLMClient, NVIDIAVLMClient, SyncGeminiVLMClient, SyncMistralVLMClient, SyncNVIDIAVLMClient, VLMResponse
 from codex_backend.ai.preprocessor import preprocess_handwriting, HandwritingPreprocessor
 from codex_backend.db.mongo_ocr import MongoDBClient
 
@@ -59,10 +59,12 @@ class DoctorHandwritingWorkflow:
         mongo_client: Optional[MongoDBClient] = None,
     ):
         self.api_key = api_key or os.getenv("NVIDIA_NIM_API_KEY")
+        self.mistral_api_key = os.getenv("MISTRAL_API_KEY")
         self.gemini_api_key = gemini_api_key or os.getenv("GEMINI_API_KEY")
         if not self.api_key:
             raise ValueError("NVIDIA_NIM_API_KEY not found")
         self.model = model
+        self.mistral_model = "mistral-small-latest"
         self.gemini_model = gemini_model
         self.preprocess = preprocess
         self.preprocess_dir = preprocess_dir
@@ -127,14 +129,22 @@ class DoctorHandwritingWorkflow:
         start_time: float,
         timestamp: str,
     ) -> ProcessingResult:
-        try:
-            with SyncGeminiVLMClient(api_key=self.gemini_api_key, model=self.gemini_model) as client:
-                response = client.interpret_handwriting(process_path, prompt=self.custom_prompt)
-        except Exception as exc:
-            print(f"Gemini OCR failed, falling back to NVIDIA: {exc}")
-            with SyncNVIDIAVLMClient(api_key=self.api_key, model=self.model) as client:
-                response = client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+        response = None
+        if self.mistral_api_key:
+            try:
+                with SyncMistralVLMClient(api_key=self.mistral_api_key, model=self.mistral_model) as client:
+                    response = client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+            except Exception as exc:
+                print(f"Mistral OCR failed, falling back to Gemini: {exc}")
 
+        if response is None:
+            try:
+                with SyncGeminiVLMClient(api_key=self.gemini_api_key, model=self.gemini_model) as client:
+                    response = client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+            except Exception as exc:
+                print(f"Gemini OCR failed, falling back to NVIDIA: {exc}")
+                with SyncNVIDIAVLMClient(api_key=self.api_key, model=self.model) as client:
+                    response = client.interpret_handwriting(process_path, prompt=self.custom_prompt)
         processing_time = (time.time() - start_time) * 1000
         confidence = calculate_confidence(response.usage, response.reasoning)
 
@@ -158,14 +168,22 @@ class DoctorHandwritingWorkflow:
         start_time: float,
         timestamp: str,
     ) -> ProcessingResult:
-        try:
-            async with GeminiVLMClient(api_key=self.gemini_api_key, model=self.gemini_model) as client:
-                response = await client.interpret_handwriting(process_path, prompt=self.custom_prompt)
-        except Exception as exc:
-            print(f"Gemini OCR failed, falling back to NVIDIA: {exc}")
-            async with NVIDIAVLMClient(api_key=self.api_key, model=self.model) as client:
-                response = await client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+        response = None
+        if self.mistral_api_key:
+            try:
+                async with MistralVLMClient(api_key=self.mistral_api_key, model=self.mistral_model) as client:
+                    response = await client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+            except Exception as exc:
+                print(f"Mistral OCR failed, falling back to Gemini: {exc}")
 
+        if response is None:
+            try:
+                async with GeminiVLMClient(api_key=self.gemini_api_key, model=self.gemini_model) as client:
+                    response = await client.interpret_handwriting(process_path, prompt=self.custom_prompt)
+            except Exception as exc:
+                print(f"Gemini OCR failed, falling back to NVIDIA: {exc}")
+                async with NVIDIAVLMClient(api_key=self.api_key, model=self.model) as client:
+                    response = await client.interpret_handwriting(process_path, prompt=self.custom_prompt)
         processing_time = (time.time() - start_time) * 1000
         confidence = calculate_confidence(response.usage, response.reasoning)
 
