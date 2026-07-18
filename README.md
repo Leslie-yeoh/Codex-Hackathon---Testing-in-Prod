@@ -4,7 +4,7 @@ A full-stack application for extracting handwritten medical notes. The Next.js i
 
 ## Stack
 
-- Frontend: Next.js 16, React 19, Tailwind CSS
+- Frontend: JavaScript, Next.js 16, React 19, Tailwind CSS
 - Backend: FastAPI, Python 3.13+
 - Storage and auth: MongoDB, GridFS, JWT
 - OCR: Mistral, then Gemini, with NVIDIA NIM fallback
@@ -24,7 +24,7 @@ images/         Sample input images
 - MongoDB
 - `NVIDIA_NIM_API_KEY` for the OCR workflow
 
-`MISTRAL_API_KEY` and `GEMINI_API_KEY` are optional. When configured, OCR tries Mistral first, then Gemini, then NVIDIA.
+`MISTRAL_API_KEY` and `GEMINI_API_KEY` are optional OCR provider keys. When configured, OCR tries Mistral first, then Gemini, then NVIDIA NIM as the fallback.
 
 ## Configure
 
