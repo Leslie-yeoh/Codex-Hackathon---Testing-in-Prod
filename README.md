@@ -4,7 +4,7 @@ A full-stack application for extracting handwritten medical notes. The Next.js i
 
 ## Stack
 
-- Frontend: Next.js 16, React 19, Tailwind CSS
+- Frontend: JavaScript, Next.js 16, React 19, Tailwind CSS
 - Backend: FastAPI, Python 3.13+
 - Storage and auth: MongoDB, GridFS, JWT
 - OCR: Mistral, then Gemini, with NVIDIA NIM fallback
