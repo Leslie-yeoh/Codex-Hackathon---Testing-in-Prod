@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { useAuth } from "../../hooks/globalHooks";
 import { getNavigationItems } from "../../navigation/routes";
 import { globalStyles } from "../../styles/global.style";
@@ -167,9 +168,7 @@ export default function NavigationBar() {
                   <span className={styles.profileRole}>{displayRole}</span>
                   <span>{displayName}</span>
                 </span>
-                <span className={styles.chevron} aria-hidden="true">
-                  {isProfileOpen ? "ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â²" : "ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¼"}
-                </span>
+                <ChevronDown size={16} aria-hidden="true" className={cn(styles.chevron, isProfileOpen && styles.chevronOpen)} />
               </button>
 
               <div
@@ -287,7 +286,8 @@ const styles = {
     "flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-teal-700 text-xs font-bold text-white",
   profileCopy: "flex flex-col",
   profileRole: "block text-xs font-medium text-slate-500",
-  chevron: "text-xs text-slate-400",
+  chevron: "h-4 w-4 text-slate-400 transition-transform",
+  chevronOpen: "rotate-180",
   profileMenu: [
     "absolute right-0 top-full z-40 mt-2 w-40",
     "rounded-lg border border-slate-200 bg-white p-1 shadow-lg",

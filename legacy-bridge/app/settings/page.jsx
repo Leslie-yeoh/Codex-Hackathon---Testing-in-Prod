@@ -23,6 +23,7 @@ export default function SettingsPage() {
     isCookieConsentEnabled,
     isHighContrast,
     language,
+    savePreferences,
     setActiveSection,
     setIsCookieConsentEnabled,
     setIsHighContrast,
@@ -195,6 +196,7 @@ export default function SettingsPage() {
             <ToggleRow
               checked={isHighContrast}
               label="High Contrast"
+              description="Use stronger borders and text contrast after saving."
               onChange={setIsHighContrast}
             />
 
@@ -213,7 +215,7 @@ export default function SettingsPage() {
               </select>
             </label>
 
-            <Button type="button">Save Preferences</Button>
+            <Button type="button" onClick={savePreferences}>Save Preferences</Button>
           </div>
             </Container>
           )}

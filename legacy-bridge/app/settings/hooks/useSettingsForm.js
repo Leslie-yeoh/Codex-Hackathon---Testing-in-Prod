@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useState } from "react";
 import { getCurrentUser } from "../../../services/login/loginService";
 import { SETTINGS_SECTIONS } from "../constants";
 
 const themeStorageKey = "legacyBridgeTheme";
 const contrastStorageKey = "legacyBridgeHighContrast";
+const languageStorageKey = "legacyBridgeLanguage";
 
 const getStoredTheme = () => {
   if (typeof window === "undefined") {
@@ -21,6 +22,13 @@ const getStoredContrast = () => {
   }
 
   return window.localStorage.getItem(contrastStorageKey) === "true";
+};
+const getStoredLanguage = () => {
+  if (typeof window === "undefined") {
+    return "en";
+  }
+
+  return window.localStorage.getItem(languageStorageKey) || "en";
 };
 
 const getInitialAccountForm = () => {
@@ -41,47 +49,25 @@ export default function useSettingsForm() {
   const [accountForm, setAccountForm] = useState(getInitialAccountForm);
   const [theme, setTheme] = useState(getStoredTheme);
   const [isHighContrast, setIsHighContrast] = useState(getStoredContrast);
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState(getStoredLanguage);
   const [isCookieConsentEnabled, setIsCookieConsentEnabled] = useState(true);
   // Temporary disabled until two-factor setup flow is added.
   // const [isTwoFactorEnabled, setIsTwoFactorEnabled] = useState(false);
 
-  useLayoutEffect(() => {
-    const root = document.documentElement;
-    const applyTheme = () => {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-      const activeTheme = theme === "system" ? systemTheme : theme;
-
-      root.dataset.theme = activeTheme;
-      window.localStorage.setItem(themeStorageKey, theme);
-    };
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    applyTheme();
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener("change", applyTheme);
-    } else {
-      mediaQuery.addListener(applyTheme);
-    }
-
-    return () => {
-      if (mediaQuery.removeEventListener) {
-        mediaQuery.removeEventListener("change", applyTheme);
-      } else {
-        mediaQuery.removeListener(applyTheme);
-      }
-    };
-  }, [theme]);
-
-  useEffect(() => {
-    document.documentElement.dataset.contrast = isHighContrast ? "high" : "normal";
-    window.localStorage.setItem(contrastStorageKey, String(isHighContrast));
-  }, [isHighContrast]);
-
   const updateAccountField = (field, value) => {
     setAccountForm((current) => ({ ...current, [field]: value }));
+  };
+  const savePreferences = () => {
+    const root = document.documentElement;
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+
+    root.dataset.theme = theme === "system" ? systemTheme : theme;
+    root.dataset.contrast = isHighContrast ? "high" : "normal";
+    window.localStorage.setItem(themeStorageKey, theme);
+    window.localStorage.setItem(contrastStorageKey, String(isHighContrast));
+    window.localStorage.setItem(languageStorageKey, language);
   };
 
   const activeSectionLabel =
@@ -96,6 +82,7 @@ export default function useSettingsForm() {
     isHighContrast,
     language,
     setActiveSection,
+    savePreferences,
     setIsCookieConsentEnabled,
     setIsHighContrast,
     setLanguage,
