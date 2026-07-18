@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import Container from "../Container/Container";
+import Container from "../../../components/Container/Container";
 
 const architecture = [
   "Upload source: staff add a photo, scan, PDF, or screenshot from an older record.",
