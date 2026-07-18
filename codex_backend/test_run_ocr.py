@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from codex_backend.run_ocr import OCRResponse, main, parse_args, run_ocr
+from run_ocr import OCRResponse, main, parse_args, run_ocr
 
 
 class RunOcrTests(unittest.TestCase):
@@ -19,7 +19,7 @@ class RunOcrTests(unittest.TestCase):
         self.assertEqual(args.image_path, "scan.jpg")
         self.assertFalse(args.enhance_image)
 
-    @patch("codex_backend.run_ocr.process_image_path")
+    @patch("run_ocr.process_image_path")
     def test_run_ocr_forwards_the_requested_preprocessing(self, process_image_path):
         image_path = Path(__file__).resolve()
         response = OCRResponse(
@@ -35,7 +35,7 @@ class RunOcrTests(unittest.TestCase):
         self.assertIs(run_ocr(str(image_path), False), response)
         process_image_path.assert_called_once_with(str(image_path), enhance=False)
 
-    @patch("codex_backend.run_ocr.run_ocr")
+    @patch("run_ocr.run_ocr")
     def test_main_emits_the_api_json_shape(self, mocked_run_ocr):
         mocked_run_ocr.return_value = OCRResponse(
             success=True,

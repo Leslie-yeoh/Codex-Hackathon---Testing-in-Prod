@@ -77,7 +77,7 @@ export default function SettingsPage() {
 
         <div className={styles.settingsPanel}>
           {activeSection === "profile" && (
-            <Container as="article" title={activeSectionLabel} className="hover:!scale-100">
+            <Container as="article" title={activeSectionLabel}assName="hover:!scale-100">
           <div className={styles.profileGrid}>
             <div className={styles.avatarPanel}>
               <div className={styles.avatar}>
@@ -200,7 +200,7 @@ export default function SettingsPage() {
               onChange={setIsHighContrast}
             />
 
-            <label className={styles.fieldGroup}>
+            {/* <label className={styles.fieldGroup}>
               <span className={globalStyles.fieldLabel}>Language</span>
               <select
                 className={globalStyles.input}
@@ -213,7 +213,7 @@ export default function SettingsPage() {
                   </option>
                 ))}
               </select>
-            </label>
+            </label> */}
 
             <Button type="button" onClick={savePreferences}>Save Preferences</Button>
           </div>
