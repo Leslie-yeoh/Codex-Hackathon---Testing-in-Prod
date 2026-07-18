@@ -155,7 +155,6 @@ export default function AboutContent() {
       </section>
 
       <Container
-        className="hover:!scale-100"
         title="How it works"
         description="The same workflow can be understood by non-technical users and technical teams: start with the source, organize the information, review it, then save it."
       >
@@ -178,7 +177,6 @@ export default function AboutContent() {
       </section>
 
       <Container
-        className="hover:!scale-100"
         title="An AI web app for Malaysia's healthcare future"
         description="Legacy Bridge exploring how these goals could be achieved through practical record digitisation and review."
       >
@@ -244,7 +242,7 @@ export default function AboutContent() {
 }
 
 const styles = {
-  emrPanel: "grid gap-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6",
+  emrPanel: "grid gap-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-transform duration-300 hover:scale-[1.02] md:p-6",
   emrEyebrow: "text-xs font-semibold uppercase tracking-wide text-teal-700",
   emrTitle: "mt-2 text-2xl font-semibold text-slate-950 md:text-3xl",
   emrText: "mt-3 max-w-3xl text-sm leading-6 text-slate-600 md:text-base",
@@ -255,14 +253,11 @@ const styles = {
   emrSource: "text-sm font-medium text-teal-800 underline underline-offset-4 transition hover:text-teal-950",  grid: "grid gap-4 md:grid-cols-2",
   paragraph: "mt-3 text-sm leading-6 text-slate-600 md:text-base",
   timeline: "mt-5 grid gap-3",
-  timelineItem: [
-    "flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700",
-    "transition-transform duration-300 hover:scale-[1.02]",
-  ].join(" "),
+  timelineItem: "flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700",
   timelineNumber: "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-700 text-xs font-bold text-white",
   cards: "grid gap-4 md:grid-cols-3",
   goals: "mt-5 grid gap-3",
-  goal: "rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700 transition-transform duration-300 hover:scale-[1.02]",
+  goal: "rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700",
   techGrid: "mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3",
   techCard:
     "flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4",
