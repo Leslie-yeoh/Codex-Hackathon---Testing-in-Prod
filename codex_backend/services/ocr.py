@@ -33,7 +33,7 @@ class OCRResponse(BaseModel):
     processing_time_ms: float = Field(..., description="Processing time in milliseconds")
     preprocessed_image_saved: bool = Field(False, description="Whether preprocessed image was saved")
     metadata: dict = Field(default_factory=dict)
-    extracted_fields: list[dict[str, str]] = Field(default_factory=list)
+    extracted_fields: list[dict] = Field(default_factory=list)
     file_id: Optional[str] = Field(None, description="GridFS file ID")
 
 
@@ -175,7 +175,7 @@ def get_workflow() -> DoctorHandwritingWorkflow:
     return workflow
 
 
-def extract_structured_fields(text: str) -> list[dict[str, str]]:
+def extract_structured_fields(text: str) -> list[dict]:
     candidates = re.findall(r"```(?:json)?\s*(\[.*?\])\s*```|(\[[^\[\]]*\])", text, re.IGNORECASE | re.DOTALL)
     for fenced, inline in candidates:
         try:
@@ -185,13 +185,13 @@ def extract_structured_fields(text: str) -> list[dict[str, str]]:
         if isinstance(fields, list):
             return [
                 {
-                    "patient_reference": str(field.get("patient_reference", "")).strip(),
-                    "observations": str(field.get("observations", field.get("observation", ""))).strip(),
-                    "value": str(field.get("value", "")).strip(),
-                    "unit": str(field.get("unit", "")).strip(),
+                    "patient_reference": field.get("patient_reference", ""),
+                    "observation": field.get("observation", ""),
+                    "value": field.get("value"),
+                    "unit": field.get("unit"),
                 }
                 for field in fields
-                if isinstance(field, dict)
+                if isinstance(field, dict) and set(field) == {"patient_reference", "observation", "value", "unit"}
             ]
     return []
 

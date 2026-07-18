@@ -21,6 +21,7 @@ class MongoDBClient:
         self.db = None
         self.fs: Optional[GridFS] = None
         self.bucket: Optional[GridFSBucket] = None
+        self._dashboard_cache: dict[str, list[dict[str, Any]]] = {}
 
     def connect(self):
         if self.client is not None:
@@ -73,10 +74,15 @@ class MongoDBClient:
             source=image_bytes,
             metadata=metadata,
         )
+        self._dashboard_cache.clear()
         return str(file_id)
 
     def get_weekly_ocr_volume(self) -> list[dict[str, Any]]:
         """Count OCR uploads for today and the preceding six UTC days."""
+        cache_key = "dashboard:weekly-ocr-volume"
+        if cache_key in self._dashboard_cache:
+            return self._dashboard_cache[cache_key]
+
         if not self.connected:
             self.connect()
 
@@ -94,12 +100,18 @@ class MongoDBClient:
         ):
             counts[file["uploadDate"].date()] += 1
 
-        return [
+        result = [
             {"day": day.strftime("%a"), "records": counts[day]}
             for day in counts
         ]
+        self._dashboard_cache[cache_key] = result
+        return result
 
     def get_ocr_system_conditions(self) -> list[dict[str, str]]:
+        cache_key = "dashboard:ocr-system-conditions"
+        if cache_key in self._dashboard_cache:
+            return self._dashboard_cache[cache_key]
+
         if not self.connected:
             self.connect()
 
@@ -132,7 +144,7 @@ class MongoDBClient:
         error_rate = (metrics["errors"] / count * 100) if count else 0
         detail = "Across all OCR processes" if count else "No OCR processes recorded"
 
-        return [
+        result = [
             {
                 "label": "Average Response Time",
                 "value": f"{round(average_time)} ms",
@@ -146,6 +158,8 @@ class MongoDBClient:
                 "status": "Healthy" if error_rate < 5 else "Attention",
             },
         ]
+        self._dashboard_cache[cache_key] = result
+        return result
 
     def log_audit_event(self, operator: str, event_type: str, description: str) -> str:
         if not self.connected:
@@ -206,6 +220,8 @@ class MongoDBClient:
                 }
             },
         )
+        if result.modified_count:
+            self._dashboard_cache.clear()
         return result.modified_count == 1
 
     def list_confirmed_ocr_uploads(self, user_id: str) -> list[dict[str, Any]]:
@@ -269,6 +285,7 @@ class MongoDBClient:
                 "extraction": result_dict,
             },
         )
+        self._dashboard_cache.clear()
         return str(file_id)
 
     def get_extraction(self, image_hash: str) -> Optional[Dict[str, Any]]:

@@ -12,26 +12,27 @@ Guidelines:
 4. Flag uncertain readings with [uncertain: "original text"] notation
 5. Maintain clinical accuracy over readability when in doubt"""
 
-USER_PROMPT_TEMPLATE = """Analyze this handwritten medical image. Extract all text and convert to clear medical notes.
+USER_PROMPT_TEMPLATE = """You are a multimodal document-extraction assistant. Analyze the supplied image containing patient or clinical information.
 
-Return the document context as valid HTML only. Do not use Markdown, tables, or paragraphs.
-Use an ordered list for sections and nested unordered lists for each detail:
-<ol>
-  <li><strong>Patient Information</strong><ul><li>[if present]</li></ul></li>
-  <li><strong>Diagnosis/Assessment</strong><ul><li>[clinical finding]</li></ul></li>
-  <li><strong>Medications</strong><ul><li>[medicine, dose, route, frequency, duration]</li></ul></li>
-  <li><strong>Instructions</strong><ul><li>[patient counseling point]</li></ul></li>
-  <li><strong>Follow-up</strong><ul><li>[return visit, lab, or referral]</li></ul></li>
-  <li><strong>Raw Transcription</strong><ul><li>[verbatim text]</li></ul></li>
-</ol>
+Perform this task in exactly two stages, in order:
 
-Be thorough. Preserve exact dosages (mg, mL, units), frequencies (daily, BID, TID, QID, PRN), and durations.
+STAGE 1 â€” PARAGRAPH DESCRIPTION
+Write one natural, flowing paragraph (not a list) describing everything relevant visible in the image: patient identity, medicines/actions, amounts, durations, and instructions. Use only what is visibly present. If the image is unreadable or contains no relevant data, say so honestly.
 
-After the medical notes, include exactly one fenced JSON array and no other JSON. Include one object per finding, even when there is only one finding:
+STAGE 2 â€” STRUCTURED JSON
+Using only the paragraph you just wrote, extract a JSON array. One object per distinct medicine, action, or observation. Each object must have exactly these keys: "patient_reference", "observation", "value", and "unit". patient_reference is the patient name, ID, or IC number exactly as it appears. observation is the medicine or action. value is a number or string, or null when no value applies. unit is a string or null when not applicable. Preserve original spelling and casing of proper nouns. Do not infer or add information. If the image is unreadable or contains no relevant data, return [].
+
+Output exactly this format:
+
+## Paragraph Description
+<paragraph>
+
+## Structured Data
 ```json
-[{"patient_reference":"","observations":"","value":"","unit":""}]
+[{"patient_reference":"...","observation":"...","value":null,"unit":null}]
 ```
-patient_reference may be the patient name, patient ID, or IC number. Repeat it in each object. observations is one medicine or finding and its related information. Use separate objects for separate findings. Use empty strings for information that is absent or unclear. Do not add keys or prose inside the JSON block."""
+
+The JSON must be strictly valid, with no comments, trailing commas, extra keys, or text inside its code block."""
 
 MEDICAL_ABBREVIATIONS = {
     "qd": "daily",

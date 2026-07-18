@@ -37,7 +37,7 @@ const normalizeExtraction = (data = {}) => {
     rawText: data.natural_language ?? data.raw_text ?? "",
     findings: (fields.length ? fields : [{}]).map((field) => ({
       observation: field.observations ?? field.observation ?? "",
-      value: field.value ?? "",
+      value: String(field.value ?? ""),
       unit: field.unit ?? "",
     })),
     confidence: data.low_confidence_flag
