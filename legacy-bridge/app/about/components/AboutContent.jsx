@@ -28,6 +28,20 @@ const principles = [
   },
 ];
 
+const emrHighlights = [
+  {
+    title: "22 of 151 hospitals",
+    description: "Government hospitals reported as fully digital as of July 2026.",
+  },
+  {
+    title: "510 of 2,917 facilities",
+    description: "Primary healthcare facilities reported as fully digital as of July 2026.",
+  },
+  {
+    title: "2028-2030 rollout",
+    description: "Government clinics are targeted for full digitalisation by 2028, followed by hospitals by 2030.",
+  },
+];
 const nationalGoals = [
   "Support Malaysia's 2030 goal for a nationwide electronic medical record.",
   "Replace paper records with secure, seamless sharing across public and private healthcare.",
@@ -92,6 +106,34 @@ const futureDevelopments = [
 export default function AboutContent() {
   return (
     <>
+      <section className={styles.emrPanel} aria-labelledby="emr-transition-title">
+        <div>
+          <p className={styles.emrEyebrow}>Malaysia EMR transition</p>
+          <h2 id="emr-transition-title" className={styles.emrTitle}>
+            From paper files to connected care
+          </h2>
+          <p className={styles.emrText}>
+            Public healthcare is expanding electronic medical records to make patient
+            information easier to find, review, and share across care settings.
+          </p>
+        </div>
+        <div className={styles.emrHighlights}>
+          {emrHighlights.map((highlight) => (
+            <article key={highlight.title} className={styles.emrHighlight}>
+              <h3 className={styles.emrHighlightTitle}>{highlight.title}</h3>
+              <p className={styles.emrHighlightText}>{highlight.description}</p>
+            </article>
+          ))}
+        </div>
+        <a
+          className={styles.emrSource}
+          href="https://berita.rtm.gov.my/nasional/senarai-berita-nasional/senarai-artikel/kkm-sasar-pendigitalan-penuh-klinik-kerajaan-menjelang-2028/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Source: Ministry of Health update reported by RTM, 8 July 2026
+        </a>
+      </section>
       <section className={styles.grid}>
         <Container as="article" title="The problem">
           <p className={styles.paragraph}>
@@ -202,7 +244,15 @@ export default function AboutContent() {
 }
 
 const styles = {
-  grid: "grid gap-4 md:grid-cols-2",
+  emrPanel: "grid gap-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6",
+  emrEyebrow: "text-xs font-semibold uppercase tracking-wide text-teal-700",
+  emrTitle: "mt-2 text-2xl font-semibold text-slate-950 md:text-3xl",
+  emrText: "mt-3 max-w-3xl text-sm leading-6 text-slate-600 md:text-base",
+  emrHighlights: "grid gap-3 md:grid-cols-3",
+  emrHighlight: "rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm",
+  emrHighlightTitle: "text-lg font-semibold text-teal-800",
+  emrHighlightText: "mt-2 text-sm leading-6 text-slate-600",
+  emrSource: "text-sm font-medium text-teal-800 underline underline-offset-4 transition hover:text-teal-950",  grid: "grid gap-4 md:grid-cols-2",
   paragraph: "mt-3 text-sm leading-6 text-slate-600 md:text-base",
   timeline: "mt-5 grid gap-3",
   timelineItem: [
@@ -212,7 +262,7 @@ const styles = {
   timelineNumber: "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-700 text-xs font-bold text-white",
   cards: "grid gap-4 md:grid-cols-3",
   goals: "mt-5 grid gap-3",
-  goal: "rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm leading-6 text-teal-950 transition-transform duration-300 hover:scale-[1.02]",
+  goal: "rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700 transition-transform duration-300 hover:scale-[1.02]",
   techGrid: "mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3",
   techCard:
     "flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4",
