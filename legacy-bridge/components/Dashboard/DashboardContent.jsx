@@ -128,7 +128,7 @@ function DashboardSkeleton() {
       </section>
       <section className={styles.grid}>
         <Container title="Weekly Processing Volume" className="flex flex-col">
-          <div className="mt-5 h-64 animate-pulse rounded-lg bg-slate-200" />
+          <div className="mt-5 h-96 animate-pulse rounded-lg bg-slate-200" />
         </Container>
         <Container title="System Health">
           <div className="mt-5 grid gap-3">
@@ -161,11 +161,11 @@ function StatCard({ label, value }) {
 const styles = {
   contentStack: "grid gap-4 md:gap-5",
   grid: "grid gap-4 lg:grid-cols-[1.4fr_1fr]",
-  chart: "mt-5 flex min-h-64 flex-1 items-center justify-center gap-2",
-  yAxis: "flex h-44 flex-col justify-between text-xs font-medium text-slate-500",
+  chart: "mt-5 flex min-h-100 flex-1 items-center justify-center gap-2",
+  yAxis: "flex h-80 flex-col justify-between text-xs font-medium text-slate-500",
   chartContent: "min-w-0 flex-1",
   chartPlot:
-    "relative flex h-44 items-end gap-3 border-b border-l border-slate-300 px-3 pt-2",
+    "relative flex h-72 items-end gap-3 border-b border-l border-slate-300 px-3 pt-2",
   xAxis: "flex gap-3 pl-3 pt-2",
   barItem: "flex h-full flex-1 flex-col items-center justify-end",
   barTrack: "flex h-full w-full items-end",
